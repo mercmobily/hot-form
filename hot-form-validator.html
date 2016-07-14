@@ -1,0 +1,179 @@
+<link rel="import" href="../polymer/polymer.html">
+
+<!--
+`hot-form-validator`
+
+`<hot-form-validator>` is an element meant to wrap a `<form is="iron-form">`
+element, to set fields as invalid (with the correct error message) if the server
+returns an error
+
+    <hot-form-validator>
+      <form is="iron-form" id="form" method="post" action="/stores/polymer">
+        <paper-input required id="name" name="name" label="Your name"></paper-input>
+        <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
+        <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
+      </form>
+    </hot-form-validator>
+
+The element works by listening to the `on-iron-form-submit` and `on-iron-form-error`
+to see what the server has returned: in case of success, it displays a
+customisable "Success!"; in case of error, it looks at the server response sets
+the problematic field as `invalid`, as well as setting the error messages.
+
+<hot-form-validator success-message="Record saved!">
+  <form is="iron-form" id="form" method="post" action="/stores/polymer">
+    <paper-input required id="name" name="name" label="Your name"></paper-input>
+    <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
+    <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
+  </form>
+</hot-form-validator>
+
+The message is provided with a `<paper-toast>` widget that will be looked for
+as follows:
+
+* if `global-toast` is passed, then it will be searched in `document`
+* Otherwise, it will be searched within the widget
+
+In terms of searching:
+
+* if `toast-id` is passed, it will be searched by the corresponding `id` field
+* Otherwise, it will be the first `<paper-toast>` widget found.
+
+    <hot-form-validator global-toast>
+    ...
+    </hot-form-validator>
+
+
+    <hot-form-validator global-toast toast-id="some-global-toast">
+    ...
+    </hot-form-validator>
+
+    <hot-form-validator toast-id="some-toast">
+    ...
+    </hot-form-validator>
+
+The server response could be 422; for this widget to set the errors properly,
+the return message must be in the following format:
+
+    {"message":"Unprocessable Entity","errors":[{"field":"name","message":"Not good!"}]}
+
+This will cause `hot-form-validator` to display the error message `Unprocessable Entity`
+and set the field named `name` as `invalid`, with the invalid message set as
+`Not good!`.
+
+All automatically as it should be.
+
+@group Hotplate Elements
+@element hot-form-validator
+@demo demo/index.html
+-->
+
+<dom-module id="hot-form-validator">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+
+    <div on-iron-form-submit="_formSubmitted" on-iron-form-error="_formError" id="content">
+      <content></content>
+    </div>
+
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'hot-form-validator',
+
+      properties: {
+
+        /**
+         * The ID of the paper-toast element
+        */
+        toastId: String,
+
+        /**
+         * If set to `true`, the toast element will be searched in the
+         * `document` rather than within the widget
+        */
+        globalToast: Boolean,
+
+        /**
+         * Message given in case of success
+        */
+        successMessage: {
+          type: String,
+          value: "Success!"
+        }
+      },
+
+      ready: function(){
+
+        this.form = this.queryEffectiveChildren( 'form' );
+
+        // Using a global toast, maybe with ID and maybe without
+        if( this.globalToast ){
+          if( this.toastId ){
+            this.toast = document.querySelector( '#' + this.toastId );
+          } else {
+            this.toast = document.querySelector( 'paper-toast');
+          }
+
+        // Using a toast in the light DOM, maybe with ID and maybe without
+        } else {
+          if( this.toastId ){
+            this.toast = this.queryEffectiveChildren( '#' + this.toastId );
+          } else {
+            this.toast = this.queryEffectiveChildren( 'paper-toast' );
+          }
+        }
+      },
+
+      _toastMessage( msg ){
+        this.toast.text = msg;
+        this.toast.show();
+      },
+
+      _setErrorsInFields( returnObject ){
+
+        var found;
+        var form = this.form;
+        if( form && returnObject.errors && Array.isArray( returnObject.errors ) ){
+
+          for( var i = 0, l = returnObject.errors.length; i < l; i ++ ){
+            var error = returnObject.errors[ i ];
+
+            var domField = this.form.$$(`[name='${error.field}']`)
+
+            domField.errorMessage = error.message;
+            domField.invalid = true;
+          };
+        }
+      },
+
+      _formError( e ){
+        var returnObject = e.detail.request.xhr.response;
+        this._toastMessage( returnObject.message );
+        this._setErrorsInFields( returnObject );
+      },
+
+      _formSubmitted( e ){
+        if( this.successMessage != '' ){
+          this._toastMessage( this.successMessage );
+        }
+      },
+
+      /*
+      attached: function(){
+        this.listen( this.form, 'iron-form-error', '_formError' );
+      },
+      detached: function(){
+        this.unlisten( this.form, 'iron-form-error', '_formError' );
+      },
+      */
+
+    });
+  </script>
+</dom-module>

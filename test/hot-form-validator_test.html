@@ -1,0 +1,32 @@
+<!doctype html>
+
+<html>
+  <head>
+    <title>hot-form-validator test</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+    <script src="../../web-component-tester/browser.js"></script>
+
+    <link rel="import" href="../hot-form-validator.html">
+  </head>
+  <body>
+
+    <test-fixture id="basic">
+      <template>
+        <hot-form-validator></hot-form-validator>
+      </template>
+    </test-fixture>
+
+    <script>
+      suite('hot-form-validator', function() {
+
+        test('instantiating the element works', function() {
+          var element = fixture('basic');
+          assert.equal(element.is, 'hot-form-validator');
+        });
+
+      });
+    </script>
+  </body>
+</html>
