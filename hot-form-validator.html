@@ -20,29 +20,30 @@ to see what the server has returned: in case of success, it displays a
 customisable "Success!"; in case of error, it looks at the server response sets
 the problematic field as `invalid`, as well as setting the error messages.
 
-<hot-form-validator success-message="Record saved!">
-  <form is="iron-form" id="form" method="post" action="/stores/polymer">
-    <paper-input required id="name" name="name" label="Your name"></paper-input>
-    <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
-    <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
-  </form>
-</hot-form-validator>
+    <hot-form-validator success-message="Record saved!">
+      <form is="iron-form" id="form" method="post" action="/stores/polymer">
+        <paper-input required id="name" name="name" label="Your name"></paper-input>
+        <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
+        <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
+      </form>
+    </hot-form-validator>
 
 The message is provided with a `<paper-toast>` widget that will be looked for
 as follows:
 
-* if `global-toast` is passed, then it will be searched in `document`
-* Otherwise, it will be searched within the widget
+ - If `global-toast` is passed, then it will be searched in `document`
+ - Otherwise, it will be searched within the widget
 
 In terms of searching:
 
-* if `toast-id` is passed, it will be searched by the corresponding `id` field
-* Otherwise, it will be the first `<paper-toast>` widget found.
+ - If `toast-id` is passed, it will be searched by the corresponding `id` field
+ - Otherwise, it will be the first `<paper-toast>` widget found.
+
+For example:
 
     <hot-form-validator global-toast>
     ...
     </hot-form-validator>
-
 
     <hot-form-validator global-toast toast-id="some-global-toast">
     ...
@@ -132,8 +133,10 @@ All automatically as it should be.
       },
 
       _toastMessage( msg ){
-        this.toast.text = msg;
-        this.toast.show();
+        if( this.toast ){
+          this.toast.text = msg;
+          this.toast.show();
+        }
       },
 
       _setErrorsInFields( returnObject ){
@@ -146,9 +149,10 @@ All automatically as it should be.
             var error = returnObject.errors[ i ];
 
             var domField = this.form.$$(`[name='${error.field}']`)
-
-            domField.errorMessage = error.message;
-            domField.invalid = true;
+            if( domField ){
+              domField.errorMessage = error.message;
+              domField.invalid = true;
+            }
           };
         }
       },
