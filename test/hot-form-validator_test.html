@@ -1,5 +1,10 @@
 <!doctype html>
 
+<!-- TODO
+  * Make sure devDependencies are there (that's the ones for tests?)
+  * Checking that it's not better to use fake elements for paper-input and paper-toast
+-->
+
 <html>
   <head>
     <title>hot-form-validator test</title>
@@ -9,22 +14,329 @@
     <script src="../../web-component-tester/browser.js"></script>
 
     <link rel="import" href="../hot-form-validator.html">
+
+    <!-- devDependencies -->
+    <link rel="import" href="../../iron-form/iron-form.html">
+    <link rel="import" href="../../paper-input/paper-input.html">
+    <link rel="import" href="../../paper-toast/paper-toast.html">
+    <link rel="import" href="../../iron-ajax/iron-ajax.html">
+
   </head>
   <body>
 
-    <test-fixture id="basic">
+    <paper-toast id="firstGlobalToast"></paper-toast>
+    <paper-toast id="secondGlobalToast"></paper-toast>
+
+    <test-fixture id="ajax">
       <template>
-        <hot-form-validator></hot-form-validator>
+        <iron-ajax></iron-ajax>
+      </template>
+    </test-fixture>
+
+
+    <test-fixture id="form-validating">
+      <template>
+        <hot-form-validator>
+          <paper-toast id="firstToast"></paper-toast>
+          <paper-toast id="secondToast"></paper-toast>
+          <form is="iron-form" method="POST" action="submit_validating">
+            <paper-input name="maker" id="maker"></paper-input>
+            <paper-input name="model" id="model"></paper-input>
+          </form>
+        </hot-form-validator>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="form-validating-with-special-message">
+      <template>
+        <hot-form-validator success-message="Real success!">
+          <paper-toast></paper-toast>
+          <form is="iron-form" method="POST" action="submit_validating">
+            <paper-input name="maker" id="maker"></paper-input>
+            <paper-input name="model" id="model"></paper-input>
+          </form>
+        </hot-form-validator>
+      </template>
+    </test-fixture>
+
+
+    <test-fixture id="form-failing-validation">
+      <template>
+        <hot-form-validator>
+          <paper-toast id="firstToast"></paper-toast>
+          <paper-toast id="secondToast"></paper-toast>
+          <form is="iron-form" method="POST" action="submit_not_validating">
+            <paper-input name="maker" id="maker" ></paper-input>
+            <paper-input name="model" id="model"></paper-input>
+          </form>
+        </hot-form-validator>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="using-local-toast-with-id">
+      <template>
+        <hot-form-validator toast-id="secondToast">
+          <paper-toast id="firstToast"></paper-toast>
+          <paper-toast id="secondToast"></paper-toast>
+          <form is="iron-form" method="POST" action="submit_validating">
+            <paper-input name="maker" id="maker" ></paper-input>
+            <paper-input name="model" id="model"></paper-input>
+          </form>
+        </hot-form-validator>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="using-global-toast">
+      <template>
+        <hot-form-validator global-toast>
+          <form is="iron-form" method="POST" action="submit_validating">
+            <paper-input name="maker" id="maker" ></paper-input>
+            <paper-input name="model" id="model"></paper-input>
+          </form>
+        </hot-form-validator>
+      </template>
+    </test-fixture>
+
+    <test-fixture id="using-global-toast-with-id">
+      <template>
+        <hot-form-validator global-toast toast-id="secondGlobalToast">
+          <form is="iron-form" method="POST" action="submit_validating">
+            <paper-input name="maker" id="maker" ></paper-input>
+            <paper-input name="model" id="model"></paper-input>
+          </form>
+        </hot-form-validator>
       </template>
     </test-fixture>
 
     <script>
+
       suite('hot-form-validator', function() {
 
         test('instantiating the element works', function() {
-          var element = fixture('basic');
-          assert.equal(element.is, 'hot-form-validator');
+          var formElement = fixture('form-validating');
+          assert.equal(formElement.is, 'hot-form-validator');
         });
+
+
+        suite("Uses the right toast element", function(){
+
+          var fx;
+
+          test("Uses default local toast", function(){
+            fx = fixture('form-validating');
+            expect( fx.toast.id ).to.equal('firstToast')
+          });
+
+          test("Uses local toast specifying ID", function(){
+            fx = fixture( 'using-local-toast-with-id');
+            expect( fx.toast.id ).to.equal('secondToast')
+          });
+
+          test("Uses default global toast", function(){
+            fx = fixture( 'using-global-toast');
+            expect( fx.toast.id ).to.equal('firstGlobalToast')
+
+          });
+
+          test("Uses global toast specifying ID", function(){
+            fx = fixture( 'using-global-toast-with-id' );
+            expect( fx.toast.id ).to.equal('secondGlobalToast')
+          });
+        });
+
+
+        suite("Check server validations", function(){
+
+          var server;
+          var responseHeaders = {
+            json: { 'Content-Type': 'application/json' },
+            text: { 'Content-Type': 'text/html' }
+          };
+          setup(function() {
+
+            //sinon.log = function( message ){  console.log( "HERE!", message ); };
+
+            server = sinon.fakeServer.create();
+
+            server.respondWith(
+              'POST',
+              'submit_validating', [
+                200,
+                responseHeaders.json,
+                '{"name":"nameField","surname":"surnameField"}'
+              ]
+            );
+
+            server.respondWith(
+              'POST',
+              'submit_not_validating', [
+                422,
+                responseHeaders.json,
+                '{"message":"Unprocessable Entity","errors":[{"field":"maker","message":"Maker is not acceptable"}]}'
+              ]
+            );
+
+            server.respondWith(
+              'POST',
+              'submit_not_validating_wrong_field', [
+                422,
+                responseHeaders.json,
+                '{"message":"Unprocessable Entity","errors":[{"field":"makerNOTTHERE","message":"Maker is not acceptable"}]}'
+              ]
+            );
+
+
+          });
+
+          teardown(function() {
+            server.restore();
+          });
+
+          suite("Running AJAX calls", function(){
+
+            var ajax, request;
+
+            setup( function(){
+              ajax = fixture('ajax');
+            })
+
+            test('Straight call with no error', function(){
+              ajax.url = 'submit_validating'
+              ajax.method = "POST";
+              ajax.handleAs = 'json';
+              request = ajax.generateRequest();
+              server.respond();
+
+              expect( request.response ).to.be.ok;
+              expect( request.xhr.response ).to.be.an('object');
+              expect( request.xhr.response ).to.be.deep.equal({name: 'nameField', surname: 'surnameField'});
+              expect( request.status ).to.be.equal( 200 );
+            });
+
+            test('Straight call with error', function(){
+              ajax.url = 'submit_not_validating'
+              ajax.method = "POST";
+              ajax.handleAs = 'json';
+
+              request = ajax.generateRequest();
+              server.respond();
+
+              expect(request.response).not.to.be.ok;
+              expect(request.xhr.response).to.be.an('object');
+              expect(request.status).to.be.deep.equal(422);
+              expect(request.xhr.response).to.be.deep.equal({
+                message:"Unprocessable Entity",
+                errors:[ {field:"maker",message:"Maker is not acceptable"}]
+              });
+            });
+          });
+
+          suite("Running with form submissions", function(){
+
+            test('Form call with no error', function( done ){
+
+              var fx = fixture('form-validating');
+              var forma = Polymer.dom( fx ).querySelector('form');
+              var inputMaker = Polymer.dom( forma ).querySelector('#maker');
+              var inputModel = Polymer.dom( forma ).querySelector('#model');
+              inputMaker.value = "Volvo";
+              inputModel.value = "380";
+
+              fx.addEventListener( 'iron-form-response', function( e ){
+                expect( inputMaker.invalid ).to.be.false;
+                expect( inputModel.invalid).to.be.false;
+
+                expect( fx.toast.text ).to.equal('Success!');
+
+                done();
+              });
+              fx.addEventListener( 'iron-form-error', function( e ){
+                expect( "I should not be here" ).to.be.equal("I am here");
+                done();
+              });
+
+              forma.submit();
+              server.respond();
+            });
+
+            test('Form call with no error, special message', function( done ){
+
+              var fx = fixture('form-validating-with-special-message');
+              var forma = Polymer.dom( fx ).querySelector('form');
+              var inputMaker = Polymer.dom( forma ).querySelector('#maker');
+              var inputModel = Polymer.dom( forma ).querySelector('#model');
+              inputMaker.value = "Volvo";
+              inputModel.value = "380";
+
+              fx.addEventListener( 'iron-form-response', function( e ){
+                expect( inputMaker.invalid ).to.be.false;
+                expect( inputModel.invalid).to.be.false;
+                expect( fx.toast.text ).to.equal('Real success!');
+                done();
+              });
+              fx.addEventListener( 'iron-form-error', function( e ){
+                expect( "I should not be here" ).to.be.equal("I am here");
+                done();
+              });
+
+              forma.submit();
+              server.respond();
+            });
+
+
+            test('Form call with error', function( done ){
+
+              var fx = fixture('form-failing-validation');
+              var forma = Polymer.dom( fx ).querySelector('form');
+              var inputMaker = Polymer.dom( forma ).querySelector('#maker');
+              var inputModel = Polymer.dom( forma ).querySelector('#model');
+              inputMaker.value = "Volvo";
+              inputModel.value = "380";
+
+              fx.addEventListener( 'iron-form-response', function( e ){
+                expect( "I should not be here" ).to.be.equal("I am here");
+                done();
+              });
+              fx.addEventListener( 'iron-form-error', function( e ){
+                expect( inputMaker.invalid ).to.be.true;
+                expect( inputModel.invalid).to.be.false;
+                expect( e.detail.request.xhr.response.message).to.equal('Unprocessable Entity');
+                expect( fx.toast.text ).to.equal('Unprocessable Entity');
+                done();
+              });
+
+              forma.submit();
+              server.respond();
+            });
+
+
+            test('Form call with broken error', function(done){
+
+              fx = fixture('form-failing-validation');
+              forma = Polymer.dom( fx ).querySelector('form');
+              forma.action="submit_not_validating_wrong_field";
+              inputMaker = Polymer.dom( forma ).querySelector('#maker');
+              inputModel = Polymer.dom( forma ).querySelector('#model');
+              inputMaker.value = "Volvo";
+              inputModel.value = "380";
+
+              fx.addEventListener( 'iron-form-response', function( e ){
+                expect( "I should not be here" ).to.be.equal("I am here");
+                done();
+              });
+              fx.addEventListener( 'iron-form-error', function( e ){
+                expect( inputMaker.invalid ).to.be.false;
+                expect( inputModel.invalid).to.be.false;
+                expect( e.detail.request.xhr.response.message).to.equal('Unprocessable Entity');
+                done();
+              });
+
+              forma.submit();
+              server.respond();
+            });
+          })
+
+        })
 
       });
     </script>
