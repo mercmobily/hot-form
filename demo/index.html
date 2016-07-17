@@ -11,19 +11,146 @@
 
     <link rel="import" href="../hot-form-validator.html">
 
+    <!-- devDependencies -->
+    <link rel="import" href="../../iron-form/iron-form.html">
+    <link rel="import" href="../../paper-input/paper-input.html">
+    <link rel="import" href="../../paper-toast/paper-toast.html">
+    <link rel="import" href="../../iron-ajax/iron-ajax.html">
+    <script src="../../sinonjs/sinon.js"></script>
+
     <style is="custom-style" include="demo-pages-shared-styles">
     </style>
   </head>
   <body>
 
+    <paper-toast id="firstGlobalToast"></paper-toast>
+    <paper-toast id="secondGlobalToast"></paper-toast>
+
+    <script>
+      sinon.log = function( m ){console.log("Message:", m)};
+      //var server = sinon.useFakeXMLHttpRequest()
+      server = sinon.fakeServerWithClock.create();
+      //server.autoRespond = true;
+      server.respondImmediately = true;
+
+      server.respondWith(
+        'POST',
+        'submit_validating', [
+          200,
+          'application/json',
+          '{"name":"nameField","surname":"surnameField"}'
+        ]
+      );
+
+      server.respondWith(
+        'POST',
+        'submit_not_validating', [
+          422,
+          'application/json',
+          '{"message":"Unprocessable Entity","errors":[{"field":"maker","message":"Maker is not acceptable"}]}'
+        ]
+      );
+
+
+    </script>
+
     <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator Demo</h3>
+      <h3>Basic hot-form-validator, passing</h3>
       <demo-snippet>
         <template>
-          <hot-form-validator></hot-form-validator>
+
+          <hot-form-validator>
+            <paper-toast id="firstToast"></paper-toast>
+            <form id="form" is="iron-form" method="POST" action="submit_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <button type="submit">Submit!</button>
+            </form>
+          </hot-form-validator>
+
         </template>
       </demo-snippet>
     </div>
+
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form-validator, failing</h3>
+      <demo-snippet>
+        <template>
+
+          <hot-form-validator>
+            <paper-toast id="firstToast"></paper-toast>
+            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <button type="submit">Submit!</button>
+            </form>
+          </hot-form-validator>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form-validator, using specified toast element</h3>
+      <demo-snippet>
+        <template>
+
+          <hot-form-validator toast-id="secondToast">
+            <paper-toast id="firstToast"></paper-toast>
+            <paper-toast id="secondToast"></paper-toast>
+            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <button type="submit">Submit!</button>
+            </form>
+          </hot-form-validator>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form-validator, using global toast element</h3>
+      <demo-snippet>
+        <template>
+
+          <hot-form-validator global-toast>
+            <paper-toast id="firstToast"></paper-toast>
+            <paper-toast id="secondToast"></paper-toast>
+            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <button type="submit">Submit!</button>
+            </form>
+          </hot-form-validator>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form-validator, using spefified global toast element</h3>
+      <demo-snippet>
+        <template>
+
+          <hot-form-validator global-toast toast-id="secondGlobalToast">
+            <paper-toast id="firstToast"></paper-toast>
+            <paper-toast id="secondToast"></paper-toast>
+            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <button type="submit">Submit!</button>
+            </form>
+          </hot-form-validator>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+
+    <p>Watch out, as sometimes the local toast can be hidden behind a drawer</p>
+
 
   </body>
 </html>
