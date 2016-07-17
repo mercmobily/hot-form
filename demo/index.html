@@ -2,6 +2,7 @@
 <html>
   <head>
     <title>hot-form-validator demo</title>
+
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
@@ -15,6 +16,7 @@
     <link rel="import" href="../../iron-form/iron-form.html">
     <link rel="import" href="../../paper-input/paper-input.html">
     <link rel="import" href="../../paper-toast/paper-toast.html">
+    <link rel="import" href="../../paper-button/paper-button.html">
     <link rel="import" href="../../iron-ajax/iron-ajax.html">
     <script src="../../sinonjs/sinon.js"></script>
 
@@ -50,8 +52,6 @@
           '{"message":"Unprocessable Entity","errors":[{"field":"maker","message":"Maker is not acceptable"}]}'
         ]
       );
-
-
     </script>
 
     <div class="vertical-section-container centered">
@@ -59,12 +59,12 @@
       <demo-snippet>
         <template>
 
-          <hot-form-validator>
+          <hot-form-validator sane-submit>
             <paper-toast id="firstToast"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
-              <button type="submit">Submit!</button>
+              <paper-button type="submit" raised>Submit!</paper-button>
             </form>
           </hot-form-validator>
 
@@ -78,12 +78,12 @@
       <demo-snippet>
         <template>
 
-          <hot-form-validator>
+          <hot-form-validator sane-submit>
             <paper-toast id="firstToast"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_not_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
-              <button type="submit">Submit!</button>
+              <paper-button type="submit" raised>Submit!</paper-button>
             </form>
           </hot-form-validator>
 
@@ -96,13 +96,13 @@
       <demo-snippet>
         <template>
 
-          <hot-form-validator toast-id="secondToast">
+          <hot-form-validator sane-submit toast-id="secondToast">
             <paper-toast id="firstToast"></paper-toast>
             <paper-toast id="secondToast"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_not_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
-              <button type="submit">Submit!</button>
+              <paper-button type="submit" raised>Submit!</paper-button>
             </form>
           </hot-form-validator>
 
@@ -115,13 +115,13 @@
       <demo-snippet>
         <template>
 
-          <hot-form-validator global-toast>
+          <hot-form-validator sane-submit global-toast>
             <paper-toast id="firstToast"></paper-toast>
             <paper-toast id="secondToast"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_not_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
-              <button type="submit">Submit!</button>
+              <paper-button type="submit" raised>Submit!</paper-button>
             </form>
           </hot-form-validator>
 
@@ -134,13 +134,13 @@
       <demo-snippet>
         <template>
 
-          <hot-form-validator global-toast toast-id="secondGlobalToast">
+          <hot-form-validator sane-submit global-toast toast-id="secondGlobalToast">
             <paper-toast id="firstToast"></paper-toast>
             <paper-toast id="secondToast"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_not_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
-              <button type="submit">Submit!</button>
+              <paper-button type="submit" raised>Submit!</paper-button>
             </form>
           </hot-form-validator>
 
