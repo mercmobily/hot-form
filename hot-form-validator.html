@@ -64,11 +64,22 @@ and set the field named `name` as `invalid`, with the invalid message set as
 
 All automatically as it should be.
 
+NOTE: sane-submit will make sure that 1) An invisible button is added to the form
+so that pressing enter on the input fields will submit 2) When the paper-button
+element in the form marked as "submit" is pressed, the form is submitted.
+This option is still undocumented
+
 @group Hotplate Elements
 @element hot-form-validator
 @demo demo/index.html
 -->
 
+
+<!--
+QUESTION: Is there any way to display this piece of documentation as GitHub's readme
+in a semi-automatic way? I could write a build script to do it but...
+
+-->
 <dom-module id="hot-form-validator">
   <template>
     <style>
@@ -102,12 +113,83 @@ All automatically as it should be.
         globalToast: Boolean,
 
         /**
+         * If set to `true`, an invisible button will be added to
+         * this form, with "type='submit'. ALSO when a paper-button
+         * in the form marked as "type=submit" is pressed, the form
+         * will get submitted
+        */
+        saneSubmit: Boolean,
+
+        /**
          * Message given in case of success
         */
         successMessage: {
           type: String,
           value: "Success!"
         }
+      },
+
+      /*
+      QUESTION: I want to make the toast teamable. Especially, because the "error"
+      toast should be red, for example. I am tempted to add an option to select a
+      different toast for error, but I already have an overcomplicated toast-id,
+      global-toast, ecc. Adding an error toast would all a silly level of
+      duplication. Maybe I should add the class hot-form-validator-error to the
+      toast that displays an error, and hot-form-validator-message for non-error
+      toasts?
+      */
+
+      attached: function(){
+
+        // QUESTION: I had to do this at `attached` level because otherwise
+        // if placed in ready() this code runs BEFORE the light DOM elements
+        // in the form (<paper-input> specificlaly) won't be initialised yet
+        // (they won't have $$ methods etc.) Is that normal? Is this a good spot
+        // to place this code?
+
+        // Add submit button if so required
+        if( this.saneSubmit ){
+
+          // Add an invisible button to the form so that "enter" will
+          // make it submit
+          var button = document.createElement('button');
+          button.setAttribute( 'type', 'submit');
+          button.setAttribute( 'style', 'display: none;');
+          Polymer.dom( this.form ).appendChild( button )
+
+          // QUESTION: Which one is the way to go?
+          // I am a bit confused, because the <form is="iron-form"> element
+          // doesn't seem to obey the ruls of local/light DOM I am used to
+
+          // This? It works, but it doesn't make sense that it does since
+          // $$ should be only for local DOM, whereas paper-button is actually
+          // in the form's light DOM
+          //var paperButton = this.form.$$('paper-button[type=submit]');
+          //
+          // Or this? It doesn't even work! The API returned by Polymer.dom
+          // seems to be somehow missing bits and pieces
+          //var paperButton = Polymer.dom( this.form ).queryEffectiveChildren('paper-button[type=submit]');
+          //
+          // Or this? It seems to be the one that makes the most sense. But I am
+          // even surprised the method is even there...
+          var paperButton = this.form.queryEffectiveChildren('paper-button[type=submit]');
+
+          // Add a listener so that clicking on this button implies a submit
+          if( paperButton ){
+            this.listen( paperButton, 'tap', '_onPaperButtonTap');
+          }
+        }
+      },
+      detached: function(){
+        var paperButton = this.form.$$('paper-button[type=submit]');
+        if( paperButton ){
+          this.unlisten( paperButton, 'tap', '_onPaperButtonTap');
+        }
+      },
+
+      // Submit the form when the right button is tapped
+      _onPaperButtonTap: function(){
+        this.form.submit();
       },
 
       ready: function(){
@@ -140,7 +222,6 @@ All automatically as it should be.
       },
 
       _setErrorsInFields( returnObject ){
-
         var found;
         var form = this.form;
         if( form && returnObject.errors && Array.isArray( returnObject.errors ) ){
@@ -168,6 +249,14 @@ All automatically as it should be.
           this._toastMessage( this.successMessage );
         }
       },
+
+      /*
+      QUESTION: To keep things simple, I am listening to iron-form-response and
+      iron-form-error when they bubble up onto the hot-form-validator widget
+      (which is built to contain the form).
+      Is that a good idea?
+      */
+
 
       /*
       attached: function(){
