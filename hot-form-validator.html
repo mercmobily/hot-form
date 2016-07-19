@@ -1,7 +1,6 @@
-<link rel="import" href="../polymer/polymer.html">
+    <link rel="import" href="../polymer/polymer.html">
 
 <!--
-`hot-form-validator`
 
 `<hot-form-validator>` is an element meant to wrap a `<form is="iron-form">`
 element, to set fields as invalid (with the correct error message) if the server
@@ -75,11 +74,6 @@ This option is still undocumented
 -->
 
 
-<!--
-QUESTION: Is there any way to display this piece of documentation as GitHub's readme
-in a semi-automatic way? I could write a build script to do it but...
-
--->
 <dom-module id="hot-form-validator">
   <template>
     <style>
@@ -130,7 +124,7 @@ in a semi-automatic way? I could write a build script to do it but...
       },
 
       /*
-      QUESTION: I want to make the toast teamable. Especially, because the "error"
+      QUESTION 2: I want to make the toast teamable. Especially, because the "error"
       toast should be red, for example. I am tempted to add an option to select a
       different toast for error, but I already have an overcomplicated toast-id,
       global-toast, ecc. Adding an error toast would all a silly level of
@@ -141,7 +135,7 @@ in a semi-automatic way? I could write a build script to do it but...
 
       attached: function(){
 
-        // QUESTION: I had to do this at `attached` level because otherwise
+        // QUESTION 3: I had to do this at `attached` level because otherwise
         // if placed in ready() this code runs BEFORE the light DOM elements
         // in the form (<paper-input> specificlaly) won't be initialised yet
         // (they won't have $$ methods etc.) Is that normal? Is this a good spot
@@ -150,6 +144,8 @@ in a semi-automatic way? I could write a build script to do it but...
         // Add submit button if so required
         if( this.saneSubmit ){
 
+
+
           // Add an invisible button to the form so that "enter" will
           // make it submit
           var button = document.createElement('button');
@@ -157,24 +153,10 @@ in a semi-automatic way? I could write a build script to do it but...
           button.setAttribute( 'style', 'display: none;');
           Polymer.dom( this.form ).appendChild( button )
 
-          // QUESTION: Which one is the way to go?
-          // I am a bit confused, because the <form is="iron-form"> element
-          // doesn't seem to obey the ruls of local/light DOM I am used to
-
-          // This? It works, but it doesn't make sense that it does since
-          // $$ should be only for local DOM, whereas paper-button is actually
-          // in the form's light DOM
-          //var paperButton = this.form.$$('paper-button[type=submit]');
-          //
-          // Or this? It doesn't even work! The API returned by Polymer.dom
-          // seems to be somehow missing bits and pieces
-          //var paperButton = Polymer.dom( this.form ).queryEffectiveChildren('paper-button[type=submit]');
-          //
-          // Or this? It seems to be the one that makes the most sense. But I am
-          // even surprised the method is even there...
-          var paperButton = this.form.queryEffectiveChildren('paper-button[type=submit]');
+          // TODO: Either detach this button, or move this bit in ready()
 
           // Add a listener so that clicking on this button implies a submit
+          var paperButton = this.form.queryEffectiveChildren('paper-button[type=submit]');
           if( paperButton ){
             this.listen( paperButton, 'tap', '_onPaperButtonTap');
           }
@@ -249,13 +231,6 @@ in a semi-automatic way? I could write a build script to do it but...
           this._toastMessage( this.successMessage );
         }
       },
-
-      /*
-      QUESTION: To keep things simple, I am listening to iron-form-response and
-      iron-form-error when they bubble up onto the hot-form-validator widget
-      (which is built to contain the form).
-      Is that a good idea?
-      */
 
 
       /*
