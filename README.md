@@ -1,4 +1,3 @@
-`hot-form-validator`
 
 `<hot-form-validator>` is an element meant to wrap a `<form is="iron-form">`
 element, to set fields as invalid (with the correct error message) if the server
