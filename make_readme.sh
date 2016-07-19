@@ -2,7 +2,7 @@
 
 IFS=''
 active='0';
-cat  hot-form-validator.html | while read "line";do
+cat  hot-form-validator.html | while read -r "line";do
 
 
   echo $line | grep '\-\->' > /dev/null
