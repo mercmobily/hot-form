@@ -3,6 +3,10 @@
   <head>
     <title>hot-form-validator demo</title>
 
+    <script>
+      window.Polymerr = { lazyRegister: false, dom: 'shadow', useNativeCSSProperties: true };
+    </script>
+
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
@@ -21,12 +25,30 @@
     <script src="../../sinonjs/sinon.js"></script>
 
     <style is="custom-style" include="demo-pages-shared-styles">
+
+      :root {
+        paper-toast {
+          --paper-toast-background-color: green;
+          --paper-toast-color: white;
+        };
+        paper-toast#secondGlobalToast {
+          --paper-toast-background-color: blue;
+          --paper-toast-color: white;
+        };
+        paper-toast#errorGlobalToast {
+          --paper-toast-background-color: red;
+          --paper-toast-color: white;
+        };
+      }
+
     </style>
   </head>
   <body>
 
     <paper-toast id="firstGlobalToast"></paper-toast>
-    <paper-toast id="secondGlobalToast"></paper-toast>
+    <paper-toast id="secondGlobalToast" class="second"></paper-toast>
+    <paper-toast class="error" id="errorGlobalToast"></paper-toast>
+
 
     <script>
       sinon.log = function( m ){console.log("Message:", m)};
@@ -54,13 +76,27 @@
       );
     </script>
 
+    <h1>Local toasts</h1>
+
     <div class="vertical-section-container centered">
       <h3>Basic hot-form-validator, passing</h3>
       <demo-snippet>
         <template>
 
-          <hot-form-validator sane-submit>
+          <style is="custom-style">
+              paper-toast {
+                --paper-toast-background-color: white; /* This is overwritten by line 149?!? */
+                --paper-toast-color: white;
+              };
+              paper-toast#errorToast {
+                --paper-toast-background-color: red;
+                --paper-toast-color: white;
+              };
+          </style>
+
+          <hot-form-validator sane-submit error-toast-id="errorToast">
             <paper-toast id="firstToast"></paper-toast>
+            <paper-toast id="errorToast"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
@@ -78,8 +114,20 @@
       <demo-snippet>
         <template>
 
-          <hot-form-validator sane-submit>
+          <style is="custom-style">
+              paper-toast {
+                --paper-toast-background-color: green;
+                --paper-toast-color: white;
+              };
+              paper-toast#errorToast {
+                --paper-toast-background-color: red; /* This is overwritten by line 149?!? */
+                --paper-toast-color: white;
+              };
+          </style>
+
+          <hot-form-validator sane-submit error-toast-id="errorToast">
             <paper-toast id="firstToast"></paper-toast>
+            <paper-toast id="errorToast"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_not_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
@@ -92,13 +140,65 @@
     </div>
 
     <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator, using specified toast element</h3>
+      <h3>Basic hot-form-validator, using specified toast element, passing</h3>
       <demo-snippet>
         <template>
 
-          <hot-form-validator sane-submit toast-id="secondToast">
+          <style is="custom-style">
+              paper-toast {
+                --paper-toast-background-color: gray; /* THIS influences line 119 */
+                --paper-toast-color: white;
+              };
+              paper-toast#secondToast {
+                --paper-toast-background-color: blue;
+                --paper-toast-color: white;
+              };
+              paper-toast.errorToast {
+                --paper-toast-background-color: purple;
+                --paper-toast-color: white;
+              };
+          </style>
+
+          <hot-form-validator sane-submit toast-id="secondToast" error-toast-id="errorToast">
             <paper-toast id="firstToast"></paper-toast>
             <paper-toast id="secondToast"></paper-toast>
+            <paper-toast id="errorToast"></paper-toast>
+            <form id="form" is="iron-form" method="POST" action="submit_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <paper-button type="submit" raised>Submit!</paper-button>
+            </form>
+          </hot-form-validator>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+    <h1>Global toasts</h1>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form-validator, using global toast element, passing</h3>
+      <demo-snippet>
+        <template>
+
+          <hot-form-validator sane-submit global-toast error-toast-id="errorGlobalToast">
+            <form id="form" is="iron-form" method="POST" action="submit_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <paper-button type="submit" raised>Submit!</paper-button>
+            </form>
+          </hot-form-validator>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form-validator, using global toast element, failing</h3>
+      <demo-snippet>
+        <template>
+
+          <hot-form-validator sane-submit global-toast error-toast-id="errorGlobalToast">
             <form id="form" is="iron-form" method="POST" action="submit_not_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
@@ -111,14 +211,12 @@
     </div>
 
     <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator, using global toast element</h3>
+      <h3>Basic hot-form-validator, using specified global toast element, passing</h3>
       <demo-snippet>
         <template>
 
-          <hot-form-validator sane-submit global-toast>
-            <paper-toast id="firstToast"></paper-toast>
-            <paper-toast id="secondToast"></paper-toast>
-            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
+          <hot-form-validator sane-submit global-toast toast-id="secondGlobalToast" error-toast-id="errorGlobalToast">
+            <form id="form" is="iron-form" method="POST" action="submit_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
               <paper-button type="submit" raised>Submit!</paper-button>
@@ -128,29 +226,6 @@
         </template>
       </demo-snippet>
     </div>
-
-    <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator, using spefified global toast element</h3>
-      <demo-snippet>
-        <template>
-
-          <hot-form-validator sane-submit global-toast toast-id="secondGlobalToast">
-            <paper-toast id="firstToast"></paper-toast>
-            <paper-toast id="secondToast"></paper-toast>
-            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
-              <paper-input name="maker" id="maker" ></paper-input>
-              <paper-input name="model" id="model"></paper-input>
-              <paper-button type="submit" raised>Submit!</paper-button>
-            </form>
-          </hot-form-validator>
-
-        </template>
-      </demo-snippet>
-    </div>
-
-
-    <p>Watch out, as sometimes the local toast can be hidden behind a drawer</p>
-
 
   </body>
 </html>

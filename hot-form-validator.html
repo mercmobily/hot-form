@@ -106,6 +106,9 @@ This option is still undocumented
         */
         globalToast: Boolean,
 
+
+        errorToastId: String,
+
         /**
          * If set to `true`, an invisible button will be added to
          * this form, with "type='submit'. ALSO when a paper-button
@@ -123,37 +126,11 @@ This option is still undocumented
         }
       },
 
-      /*
-      QUESTION 2: I want to make the toast teamable. Especially, because the "error"
-      toast should be red, for example. I am tempted to add an option to select a
-      different toast for error, but I already have an overcomplicated toast-id,
-      global-toast, ecc. Adding an error toast would all a silly level of
-      duplication. Maybe I should add the class hot-form-validator-error to the
-      toast that displays an error, and hot-form-validator-message for non-error
-      toasts?
-      */
 
       attached: function(){
 
-        // QUESTION 3: I had to do this at `attached` level because otherwise
-        // if placed in ready() this code runs BEFORE the light DOM elements
-        // in the form (<paper-input> specificlaly) won't be initialised yet
-        // (they won't have $$ methods etc.) Is that normal? Is this a good spot
-        // to place this code?
-
         // Add submit button if so required
         if( this.saneSubmit ){
-
-
-
-          // Add an invisible button to the form so that "enter" will
-          // make it submit
-          var button = document.createElement('button');
-          button.setAttribute( 'type', 'submit');
-          button.setAttribute( 'style', 'display: none;');
-          Polymer.dom( this.form ).appendChild( button )
-
-          // TODO: Either detach this button, or move this bit in ready()
 
           // Add a listener so that clicking on this button implies a submit
           var paperButton = this.form.queryEffectiveChildren('paper-button[type=submit]');
@@ -161,9 +138,11 @@ This option is still undocumented
             this.listen( paperButton, 'tap', '_onPaperButtonTap');
           }
         }
+
       },
+
       detached: function(){
-        var paperButton = this.form.$$('paper-button[type=submit]');
+        var paperButton = this.form.queryEffectiveChildren('paper-button[type=submit]');
         if( paperButton ){
           this.unlisten( paperButton, 'tap', '_onPaperButtonTap');
         }
@@ -176,16 +155,38 @@ This option is still undocumented
 
       ready: function(){
 
+        // Sets the form
         this.form = this.queryEffectiveChildren( 'form' );
 
+        // Add a button element, to make "enter" work
+        // if saneSubmit is set
+        // This is in ready() since it only needs to happen once
+        if( this.saneSubmit ){
+          var button = document.createElement('button');
+          button.setAttribute( 'type', 'submit');
+          button.setAttribute( 'style', 'display: none;');
+          Polymer.dom( this.form ).appendChild( button )
+        }
+
+        // GLOBAL TOAST
         // Using a global toast, maybe with ID and maybe without
         if( this.globalToast ){
+
           if( this.toastId ){
             this.toast = document.querySelector( '#' + this.toastId );
           } else {
             this.toast = document.querySelector( 'paper-toast');
           }
 
+          // Sets the errorToast. It will be the same as this.toast,
+          // unless error-toast-id is specified
+          if( this.errorToastId ){
+            this.errorToast = document.querySelector( '#' + this.errorToastId );
+          } else {
+            this.errorToast = this.toast;
+          }
+
+        // LIGHT DOM TOAST
         // Using a toast in the light DOM, maybe with ID and maybe without
         } else {
           if( this.toastId ){
@@ -193,13 +194,32 @@ This option is still undocumented
           } else {
             this.toast = this.queryEffectiveChildren( 'paper-toast' );
           }
+
+          // Sets the errorToast. It will be the same as this.toast,
+          // unless error-toast-id is specified
+          if( this.errorToastId ){
+            this.errorToast = this.queryEffectiveChildren( '#' + this.errorToastId );
+          } else {
+            this.errorToast = this.toast;
+          }
         }
+
+        //console.log("TOAST:", this.toast );
+        //console.log("ERROR TOAST:", this.errorToast );
+
       },
 
       _toastMessage( msg ){
         if( this.toast ){
           this.toast.text = msg;
           this.toast.show();
+        }
+      },
+
+      _toastError( msg ){
+        if( this.errorToast ){
+          this.errorToast.text = msg;
+          this.errorToast.show();
         }
       },
 
@@ -222,7 +242,7 @@ This option is still undocumented
 
       _formError( e ){
         var returnObject = e.detail.request.xhr.response;
-        this._toastMessage( returnObject.message );
+        this._toastError( returnObject.message );
         this._setErrorsInFields( returnObject );
       },
 
