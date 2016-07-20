@@ -26,7 +26,6 @@
 
     <style is="custom-style" include="demo-pages-shared-styles">
 
-      :root {
         paper-toast {
           --paper-toast-background-color: green;
           --paper-toast-color: white;
@@ -39,15 +38,14 @@
           --paper-toast-background-color: red;
           --paper-toast-color: white;
         };
-      }
 
     </style>
   </head>
   <body>
 
     <paper-toast id="firstGlobalToast"></paper-toast>
-    <paper-toast id="secondGlobalToast" class="second"></paper-toast>
-    <paper-toast class="error" id="errorGlobalToast"></paper-toast>
+    <paper-toast id="secondGlobalToast"></paper-toast>
+    <paper-toast id="errorGlobalToast"></paper-toast>
 
 
     <script>
@@ -84,19 +82,21 @@
         <template>
 
           <style is="custom-style">
-              paper-toast {
-                --paper-toast-background-color: white; /* This is overwritten by line 149?!? */
-                --paper-toast-color: white;
-              };
-              paper-toast#errorToast {
-                --paper-toast-background-color: red;
-                --paper-toast-color: white;
-              };
+            paper-toast#errorToast1 {
+              --paper-toast-background-color: red;
+              --paper-toast-color: white;
+            };
+
+            paper-toast#firstToast1 {
+              --paper-toast-background-color: white;
+              --paper-toast-color: black;
+            };
+
           </style>
 
-          <hot-form-validator sane-submit error-toast-id="errorToast">
-            <paper-toast id="firstToast"></paper-toast>
-            <paper-toast id="errorToast"></paper-toast>
+          <hot-form-validator sane-submit error-toast-id="errorToast1">
+            <paper-toast id="firstToast1"></paper-toast>
+            <paper-toast id="errorToast1"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
@@ -115,19 +115,21 @@
         <template>
 
           <style is="custom-style">
-              paper-toast {
-                --paper-toast-background-color: green;
-                --paper-toast-color: white;
-              };
-              paper-toast#errorToast {
-                --paper-toast-background-color: red; /* This is overwritten by line 149?!? */
-                --paper-toast-color: white;
-              };
+
+            paper-toast#errorToast2 {
+              --paper-toast-background-color: red;
+              --paper-toast-color: white;
+            };
+
+            paper-toast#firstToast2 {
+              --paper-toast-background-color: green;
+              --paper-toast-color: white;
+            };
           </style>
 
-          <hot-form-validator sane-submit error-toast-id="errorToast">
-            <paper-toast id="firstToast"></paper-toast>
-            <paper-toast id="errorToast"></paper-toast>
+          <hot-form-validator sane-submit error-toast-id="errorToast2">
+            <paper-toast id="firstToast2"></paper-toast>
+            <paper-toast id="errorToast2"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_not_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
@@ -145,25 +147,27 @@
         <template>
 
           <style is="custom-style">
-              paper-toast {
-                --paper-toast-background-color: gray; /* THIS influences line 119 */
+              paper-toast#firstToast3 {
+                --paper-toast-background-color: gray;
                 --paper-toast-color: white;
               };
-              paper-toast#secondToast {
+
+              paper-toast#secondToast3 {
                 --paper-toast-background-color: blue;
                 --paper-toast-color: white;
               };
-              paper-toast.errorToast {
+              paper-toast#errorToast3 {
                 --paper-toast-background-color: purple;
                 --paper-toast-color: white;
               };
+
           </style>
 
-          <hot-form-validator sane-submit toast-id="secondToast" error-toast-id="errorToast">
-            <paper-toast id="firstToast"></paper-toast>
-            <paper-toast id="secondToast"></paper-toast>
-            <paper-toast id="errorToast"></paper-toast>
-            <form id="form" is="iron-form" method="POST" action="submit_validating">
+          <hot-form-validator sane-submit toast-id="secondToast3" error-toast-id="errorToast3">
+            <paper-toast id="firstToast3"></paper-toast>
+            <paper-toast id="secondToast3"></paper-toast>
+            <paper-toast id="errorToast3"></paper-toast>
+            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
               <paper-button type="submit" raised>Submit!</paper-button>
