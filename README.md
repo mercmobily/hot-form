@@ -13,11 +13,6 @@ Ask yourself these questions:
 
 If the answer is yes, and you are coding this each time from scratch, then maybe you should consider using a decorator element that does _all_ of this for you. Welcome to `hot-form`.
 
-
-`<hot-form>` is an element meant to wrap a `<form is="iron-form">`
-element, to set fields as invalid (with the correct error message) if the server
-returns an error
-
 Imagine you have a form like this:
 
     <hot-form>
