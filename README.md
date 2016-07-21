@@ -1,5 +1,5 @@
 
-If you have a record on your database, and want to save it using a web form. You are using Polymer (but you could be using anything, really). You follow tutorials, and you find that everything works as expected: you make up a form (it could be an iron-form), you run it, and the record appears. You think this is a success -- until you put this form in the real world and discover that all those tutorials were lying. They were showing you that something with pedals and two wheels will move faster -- but failed to show you that in order to ride it you also need breaks, lights, a helmet; yes, they are all props. But yes, you always need them.
+Imagine you are using Polymer, you have a record on your database, and want to save it using a web form. **You follow tutorials**, and you find that everything works as expected: you make up a form (it could be an iron-form), you run it, and the record appears. **You think this is a success** -- until you put this form in the real world and discover that **all those tutorials were lying. They were showing you that something with pedals and two wheels will move faster -- but failed to show you that in order to ride it you also need breaks, lights, a helmet;** yes, they are all props. But yes, **you always need them**.
 
 Ask yourself these questions:
 
