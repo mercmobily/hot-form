@@ -1,7 +1,7 @@
 {
-  "name": "hot-form-validator",
-  "description": "Hotplate form validator.",
-  "main": "hot-form-validator.html",
+  "name": "hot-form",
+  "description": "Comprehensive form decorator",
+  "main": "hot-form.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0"
   },
