@@ -1,5 +1,5 @@
 
-Imagine you are using Polymer, you have a record on your database, and want to save it using a web form. **You follow tutorials**, and you find that everything works as expected: you make up a form (it could be an iron-form), you run it, and the record appears. **You think this is a success** -- until you put this form in the real world and discover that **all those tutorials were lying. They were showing you that something with pedals and two wheels will move faster -- but failed to show you that in order to ride it you also need breaks, lights, a helmet;** yes, they are all props. But yes, **you always need them**.
+Imagine you are using Polymer, you have a **record on your database, and want to save it** using a web form. **You follow tutorials**, and you find that everything works as expected: you make up a form (it could be an iron-form), you run it, and the record appears. **You think this is a success** -- until you put this form in the real world and discover that **all those tutorials were lying. They were showing you that something with pedals and two wheels will move faster -- but failed to show you that in order to ride it you also need breaks, lights, a helmet;** yes, they are all props. But yes, **you always need them**.
 
 Ask yourself these questions:
 
@@ -91,7 +91,26 @@ If the server returned a non-error, the server will set the "normal" `paper-toas
 
 (To be documented)
 
-## Loading of record dynamically, pre-setting form values
+## Load of record dynamically, pre-setting form values
 
 (To be documented)
+
+## Submit form when you press enter on a `paper-input` field, or when clicking on the button marked as `type=submit`.
+
+Yes, you have to do these things by hand normally. Every time. Just wrap your form with hot-form, and you won't have to worry about it.
+
+
+    <hot-form no-enter-submit>
+    ...
+    </hot-form>
+
+
+If you want to disable "submit by pressing enter", just add `no-enter-submit` to `hot-form`.
+
+    <hot-form no-enter-submit>
+    ...
+    </hot-form>
+
+
+If you don't want to submit the form with a button automatically, just avoid setting a button as `type=submit`.
 
