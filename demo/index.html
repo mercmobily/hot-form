@@ -1,10 +1,10 @@
 <!doctype html>
 <html>
   <head>
-    <title>hot-form-validator demo</title>
+    <title>hot-form demo</title>
 
     <script>
-      window.Polymerr = { lazyRegister: false, dom: 'shadow', useNativeCSSProperties: true };
+      //window.Polymer = { lazyRegister: false, dom: 'shadow', useNativeCSSProperties: true };
     </script>
 
     <meta charset="utf-8">
@@ -14,7 +14,7 @@
     <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
     <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
 
-    <link rel="import" href="../hot-form-validator.html">
+    <link rel="import" href="../hot-form.html">
 
     <!-- devDependencies -->
     <link rel="import" href="../../iron-form/iron-form.html">
@@ -26,7 +26,7 @@
 
     <style is="custom-style" include="demo-pages-shared-styles">
 
-        paper-toast {
+        paper-toast#firstGlobalToast {
           --paper-toast-background-color: green;
           --paper-toast-color: white;
         };
@@ -44,9 +44,8 @@
   <body>
 
     <paper-toast id="firstGlobalToast"></paper-toast>
-    <paper-toast id="secondGlobalToast"></paper-toast>
     <paper-toast id="errorGlobalToast"></paper-toast>
-
+    <paper-toast id="secondGlobalToast"></paper-toast>
 
     <script>
       sinon.log = function( m ){console.log("Message:", m)};
@@ -74,35 +73,37 @@
       );
     </script>
 
-    <h1>Local toasts</h1>
+    <h1>Global toasts</h1>
 
     <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator, passing</h3>
+      <h3>Basic hot-form, using global toast element, passing</h3>
       <demo-snippet>
         <template>
 
-          <style is="custom-style">
-            paper-toast#errorToast1 {
-              --paper-toast-background-color: red;
-              --paper-toast-color: white;
-            };
-
-            paper-toast#firstToast1 {
-              --paper-toast-background-color: white;
-              --paper-toast-color: black;
-            };
-
-          </style>
-
-          <hot-form-validator sane-submit error-toast-id="errorToast1">
-            <paper-toast id="firstToast1"></paper-toast>
-            <paper-toast id="errorToast1"></paper-toast>
+          <hot-form>
             <form id="form" is="iron-form" method="POST" action="submit_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
               <paper-button type="submit" raised>Submit!</paper-button>
             </form>
-          </hot-form-validator>
+          </hot-form>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form, using global toast element, failing</h3>
+      <demo-snippet>
+        <template>
+
+          <hot-form>
+            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <paper-button type="submit" raised>Submit!</paper-button>
+            </form>
+          </hot-form>
 
         </template>
       </demo-snippet>
@@ -110,7 +111,79 @@
 
 
     <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator, failing</h3>
+      <h3>Basic hot-form, using global toast element, specifying error toast, failing</h3>
+      <demo-snippet>
+        <template>
+
+          <hot-form error-toast-id="errorGlobalToast">
+            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <paper-button type="submit" raised>Submit!</paper-button>
+            </form>
+          </hot-form>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form, using specified global toast element, passing</h3>
+      <demo-snippet>
+        <template>
+
+          <hot-form toast-id="secondGlobalToast" error-toast-id="errorGlobalToast">
+            <form id="form" is="iron-form" method="POST" action="submit_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <paper-button type="submit" raised>Submit!</paper-button>
+            </form>
+          </hot-form>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+
+    <h1>Local toasts</h1>
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form, passing</h3>
+      <demo-snippet>
+        <template>
+
+          <style is="custom-style">
+
+          paper-toast#firstToast1 {
+            --paper-toast-background-color: white;
+            --paper-toast-color: black;
+          };
+
+            paper-toast#errorToast1 {
+              --paper-toast-background-color: red;
+              --paper-toast-color: white;
+            };
+
+
+          </style>
+
+          <hot-form local-toast error-toast-id="errorToast1">
+            <paper-toast id="firstToast1"></paper-toast>
+            <paper-toast id="errorToast1"></paper-toast>
+            <form id="form" is="iron-form" method="POST" action="submit_validating">
+              <paper-input name="maker" id="maker" ></paper-input>
+              <paper-input name="model" id="model"></paper-input>
+              <paper-button type="submit" raised>Submit!</paper-button>
+            </form>
+          </hot-form>
+
+        </template>
+      </demo-snippet>
+    </div>
+
+
+    <div class="vertical-section-container centered">
+      <h3>Basic hot-form, failing</h3>
       <demo-snippet>
         <template>
 
@@ -127,7 +200,7 @@
             };
           </style>
 
-          <hot-form-validator sane-submit error-toast-id="errorToast2">
+          <hot-form local-toast error-toast-idd="errorToast2">
             <paper-toast id="firstToast2"></paper-toast>
             <paper-toast id="errorToast2"></paper-toast>
             <form id="form" is="iron-form" method="POST" action="submit_not_validating">
@@ -135,20 +208,20 @@
               <paper-input name="model" id="model"></paper-input>
               <paper-button type="submit" raised>Submit!</paper-button>
             </form>
-          </hot-form-validator>
+          </hot-form>
 
         </template>
       </demo-snippet>
     </div>
 
     <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator, using specified toast element, passing</h3>
+      <h3>Basic hot-form, using specified toast element, passing</h3>
       <demo-snippet>
         <template>
 
           <style is="custom-style">
               paper-toast#firstToast3 {
-                --paper-toast-background-color: gray;
+                --paper-toast-background-color: pink;
                 --paper-toast-color: white;
               };
 
@@ -163,7 +236,7 @@
 
           </style>
 
-          <hot-form-validator sane-submit toast-id="secondToast3" error-toast-id="errorToast3">
+          <hot-form local-toast toast-id="secondToast3" error-toast-id="errorToast3">
             <paper-toast id="firstToast3"></paper-toast>
             <paper-toast id="secondToast3"></paper-toast>
             <paper-toast id="errorToast3"></paper-toast>
@@ -172,64 +245,12 @@
               <paper-input name="model" id="model"></paper-input>
               <paper-button type="submit" raised>Submit!</paper-button>
             </form>
-          </hot-form-validator>
+          </hot-form>
 
         </template>
       </demo-snippet>
     </div>
 
-    <h1>Global toasts</h1>
-
-    <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator, using global toast element, passing</h3>
-      <demo-snippet>
-        <template>
-
-          <hot-form-validator sane-submit global-toast error-toast-id="errorGlobalToast">
-            <form id="form" is="iron-form" method="POST" action="submit_validating">
-              <paper-input name="maker" id="maker" ></paper-input>
-              <paper-input name="model" id="model"></paper-input>
-              <paper-button type="submit" raised>Submit!</paper-button>
-            </form>
-          </hot-form-validator>
-
-        </template>
-      </demo-snippet>
-    </div>
-
-    <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator, using global toast element, failing</h3>
-      <demo-snippet>
-        <template>
-
-          <hot-form-validator sane-submit global-toast error-toast-id="errorGlobalToast">
-            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
-              <paper-input name="maker" id="maker" ></paper-input>
-              <paper-input name="model" id="model"></paper-input>
-              <paper-button type="submit" raised>Submit!</paper-button>
-            </form>
-          </hot-form-validator>
-
-        </template>
-      </demo-snippet>
-    </div>
-
-    <div class="vertical-section-container centered">
-      <h3>Basic hot-form-validator, using specified global toast element, passing</h3>
-      <demo-snippet>
-        <template>
-
-          <hot-form-validator sane-submit global-toast toast-id="secondGlobalToast" error-toast-id="errorGlobalToast">
-            <form id="form" is="iron-form" method="POST" action="submit_validating">
-              <paper-input name="maker" id="maker" ></paper-input>
-              <paper-input name="model" id="model"></paper-input>
-              <paper-button type="submit" raised>Submit!</paper-button>
-            </form>
-          </hot-form-validator>
-
-        </template>
-      </demo-snippet>
-    </div>
 
   </body>
 </html>

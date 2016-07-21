@@ -1,0 +1,474 @@
+<link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
+<link rel="import" href="../iron-ajax/iron-ajax.html">
+
+<!--
+
+If you have a record on your database, and want to save it using a web form. You are using Polymer (but you could be using anything, really). You follow tutorials, and you find that everything works as expected: you make up a form (it could be an iron-form), you run it, and the record appears. You think this is a success -- until you put this form in the real world and discover that all those tutorials were lying. They were showing you that something with pedals and two wheels will move faster -- but failed to show you that in order to ride it you also need breaks, lights, a helmet; yes, they are all props. But yes, you always need them.
+
+Ask yourself these questions:
+
+* Do you need to load data before showing the form?
+* What if loading of pre-populated data fails?
+* Do you want to overwrite a record (PUT with an existing ID), or create a new one (POST, no ID) or create a record with an arbitrary ID (PUT with a new ID)? Do you realise that you will need POST or PUT calls?
+* Do you want to display something if the form is a success? Or a failure? If so, how? A paper-toast?
+* Do you realise you will need two different paper-toast widgets, depending on error or success?
+* Do you want to highlight the problem fields if the form is NOT a success?
+* Do you want to sibmit the form when the user presses ENTER on a paper-input widget?
+
+If the answer is yes, and you are coding this each time from scratch, then maybe you should consider using a decorator element that does _all_ of this for you. Welcome to `hot-form`.
+
+`<hot-form>` is an element meant to wrap a `<form is="iron-form">`
+element, to set fields as invalid (with the correct error message) if the server
+returns an error
+
+    <hot-form>
+      <form is="iron-form" id="form" method="post" action="/stores/polymer">
+        <paper-input required id="name" name="name" label="Your name"></paper-input>
+        <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
+        <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
+      </form>
+    </hot-form>
+
+The element works by listening to the `on-iron-form-submit` and `on-iron-form-error`
+to see what the server has returned: in case of success, it displays a
+customisable "Success!"; in case of error, it looks at the server response sets
+the problematic field as `invalid`, as well as setting the error messages.
+
+    <hot-form success-message="Record saved!">
+      <form is="iron-form" id="form" method="post" action="/stores/polymer">
+        <paper-input required id="name" name="name" label="Your name"></paper-input>
+        <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
+        <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
+      </form>
+    </hot-form>
+
+The message is provided with a `<paper-toast>` widget that will be looked for
+as follows:
+
+ - If `local-toast` is passed, then it will be searched in `document`
+ - Otherwise, it will be searched within the widget
+
+In terms of searching:
+
+ - If `toast-id` is passed, it will be searched by the corresponding `id` field
+ - Otherwise, it will be the first `<paper-toast>` widget found.
+
+For example:
+
+    <hot-form local-toast>
+    ...
+    </hot-form>
+
+    <hot-form local-toast toast-id="some-local-toast-id">
+    ...
+    </hot-form>
+
+    <hot-form toast-id="some-global-toast-id">
+    ...
+    </hot-form>
+
+The server response could be 422; for this widget to set the errors properly,
+the return message must be in the following format:
+
+    {"message":"Unprocessable Entity","errors":[{"field":"name","message":"Not good!"}]}
+
+This will cause `hot-form` to display the error message `Unprocessable Entity`
+and set the field named `name` as `invalid`, with the invalid message set as
+`Not good!`.
+
+All automatically as it should be.
+
+NOTE: sane-submit will make sure that 1) An invisible button is added to the form
+so that pressing enter on the input fields will submit 2) When the paper-button
+element in the form marked as "submit" is pressed, the form is submitted.
+This option is still undocumented
+
+@group Hotplate Elements
+@element hot-form
+@demo demo/index.html
+-->
+
+
+<dom-module id="hot-form">
+  <template>
+    <style>
+      :host {
+        display: block;
+      }
+    </style>
+
+    <!-- The data loader, used to load recordId if required-->
+    <iron-ajax id="dataLoader" on-response="_dataLoaderResponse" on-error="_dataLoaderError"></iron-ajax>
+
+    <!-- Containing DIV, used to catch iron-form's events that will bubble up here -->
+    <div on-iron-form-response="_formResponse" on-iron-form-error="_formError" id="content">
+
+      <!-- iron-a11y widget used to catch if a user presses ENTER in an input field -->
+      <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="_a11ySubmit"></iron-a11y-keys>
+
+      <!-- The actual content distributed, from the light DOM -->
+      <content id="contentNode"></content>
+    </div>
+
+  </template>
+
+  <script>
+    Polymer({
+
+      is: 'hot-form',
+
+      properties: {
+
+        /**
+         * The record ID, used to load data from server (if recordIdAutoLoad is set)
+        */
+        recordId: {
+          type: String,
+          notify: true,
+        },
+
+        /**
+         * If `true`, it will load record from server to pre-populate the form
+         * making an AJAX call. Uses this.dataLoader
+        */
+        recordIdAutoLoad: {
+          type: Boolean,
+          value: true
+        },
+
+        /**
+         * By default, the 'value' property is assigned to the rata returned from
+         * autoLoad. However, some widgets need spefic properties set.
+         * This will map them
+        */
+        propertyMap: {
+          type: Object,
+          value: function(){
+            return {
+              'PAPER-TOGGLE-BUTTON': 'checked'
+            };
+          }
+        },
+
+
+        /**
+         * The ID of the paper-toast element
+        */
+        toastId: String,
+
+        /**
+         * The ID of the paper-toast element used for errors
+        */
+        errorToastId: String,
+
+        /**
+         * If set to `true`, the toast element will be searched in the
+         * `document` rather than within the widget
+        */
+        localToast: Boolean,
+
+        /**
+         * If set to `true`, pressing ENTER in a paper-input field will submit.
+         * ALSO when a paper-button in the form marked as "type=submit" is pressed,
+         * the form will get submitted
+        */
+        noEnterSubmit: Boolean,
+
+        /**
+         * Message given in case of success
+        */
+        successMessage: {
+          type: String,
+          value: "Success!"
+        },
+
+        /**
+         * Message given in case of error AND no error message is
+         * returned by the AJAX call (e.g. timeouts, etc.)
+        */
+        defaultErrorMessage: {
+          type: String,
+          value: "Error!"
+        },
+      },
+
+      observers: [
+        '_changedRecordId(recordId)'
+      ],
+
+
+      // **********************************************************
+      // LIFECYCLE FUNCTIONS
+      // **********************************************************
+
+      attached: function(){
+        this.listen( this.form, 'iron-form-presubmit', '_prepareToSubmit');
+        this._wirePaperButtonToSubmit();
+      },
+
+      detached: function(){
+        this.unlisten( this.form, 'iron-form-presubmit', '_prepareToSubmit');
+        this._unwirePaperButtonToSubmit();
+      },
+
+      ready: function(){
+
+        // Sets the form
+        this.form = form = this.queryEffectiveChildren( 'form' );
+
+        // Load data (if so required) into the form, depending on recordId
+        this._loadData();
+
+        // Sets the a11y target as the form in the light DOM
+        // It wasn't done declaratively because the form is in the light DOM
+        this.$.a11y.target=this.form;
+
+        // Set the right toasts
+        this._setToasts();
+
+      },
+
+      // **********************************************************
+      // SANE SUBMIT
+      // The part of the widget that allows submission on enter on a
+      // paper-input widget, and automatic submit when the "type=submit"
+      // button is pressed
+      // **********************************************************
+
+      _wirePaperButtonToSubmit: function(){
+        var paperButton = this.form.queryEffectiveChildren('paper-button[type=submit]');
+        if( paperButton ){
+          this.listen( paperButton, 'tap', '_onPaperButtonTap');
+        };
+      },
+
+      _unwirePaperButtonToSubmit: function(){
+        var paperButton = this.form.queryEffectiveChildren('paper-button[type=submit]');
+        if( paperButton ){
+          this.unlisten( paperButton, 'tap', '_onPaperButtonTap');
+        };
+      },
+
+
+      _a11ySubmit: function( e ){
+
+        // Only trigger submission if noEnterSubmit is not
+        // (I know, double negatives right?)
+        if( ! this.noEnterSubmit ){
+
+          // Only trigger submission for paper-input widgets
+          if( e.detail.keyboardEvent.srcElement.tagName === 'PAPER-INPUT') {
+            this.form.submit();
+          }
+
+        }
+      },
+
+      // Submit the form when the right button is tapped
+      _onPaperButtonTap: function(){
+        this.form.submit();
+      },
+
+
+
+      // **********************************************************
+      // RECORD LOADING
+      // The part of the widget that makes sure values are loaded
+      // **********************************************************
+
+      /**
+       * If recordId changes, then new values will need to be loaded
+      */
+      _changedRecordId( recordId ){
+        if( this.form && this.form._readied ){
+          this._loadData();
+        }
+      },
+
+      /**
+       * Prepare the `preloader` widget with the right URL (which depends on recordId)
+       * and generates the request.
+      */
+      _loadData: function(){
+
+        var preloader = this.$.dataLoader;
+
+        // Set the correct URL for the GET, as well as handleAs
+        if( this.recordId && this.recordIdAutoLoad ){
+          preloader.url = form.getAttribute('action') + "/" + this.recordId;
+          preloader.method="GET";
+          preloader.handleAs = 'json';
+
+          // This will generate the request, which -- as indicated in the
+          // preloader's declarative definition -- will cause either `_dataLoaderResponse`
+          // or `_dataLoaderError` to be called.
+          preloader.generateRequest();
+        }
+      },
+
+      /**
+       * The request by `preloader` worked: pre-fill the form's information
+       * with whatever came back.
+       * TODO: Add a filter to "prep" the returned data
+      */
+      _dataLoaderResponse: function(){
+        console.log("RESPONDED!");
+
+        var r = this.$.dataLoader.lastResponse;
+        if( typeof r === 'object' && r !== null ){
+
+          for( var k in r ){
+            var domField = this.form.$$(`[name='${k}']`)
+            //console.log(domField.value );
+
+            if( domField ){
+              var valueProperty;
+              valueProperty = this.propertyMap[ domField.tagName ] || 'value';
+              domField[ valueProperty ] = r[ k ];
+            }
+          };
+        }
+      },
+
+      /**
+       * The request by `preloader` didn't work.
+       * TODO: Decide what to do
+      */
+      _dataLoaderError: function(){
+        console.log("RESPONDED WITH ERROR!");
+        console.log( this.dataLoader );
+      },
+
+
+      // **********************************************************
+      // SET THE RIGHT TOASTS DEPENDING ON CONFIGURATION
+      // This will set `this.toastid` and `this.errorToastId`,
+      // which will be used to display errors
+      // **********************************************************
+      _setToasts: function(){
+
+        // LOCAL TOAST
+        // Using a local toast, maybe with ID and maybe without
+        if( this.localToast ){
+
+          if( this.toastId ){
+            this.toast = this.queryEffectiveChildren( '#' + this.toastId );
+          } else {
+            this.toast = this.queryEffectiveChildren( 'paper-toast' );
+          }
+
+          // Sets the errorToast. It will be the same as this.toast,
+          // unless error-toast-id is specified
+          if( this.errorToastId ){
+            this.errorToast = this.queryEffectiveChildren( '#' + this.errorToastId );
+          } else {
+            this.errorToast = this.queryAllEffectiveChildren( 'paper-toast' )[ 1 ] || this.toast;
+          }
+
+        // LIGHT DOM TOAST
+        // Using a toast in the light DOM, maybe with ID and maybe without
+        } else {
+
+          if( this.toastId ){
+            this.toast = document.querySelector( '#' + this.toastId );
+          } else {
+            this.toast = document.querySelector( 'paper-toast');
+          }
+
+          // Sets the errorToast. It will be the same as this.toast,
+          // unless error-toast-id is specified
+          if( this.errorToastId ){
+            this.errorToast = document.querySelector( '#' + this.errorToastId );
+          } else {
+            this.errorToast = document.querySelectorAll( 'paper-toast' )[ 1 ] || this.toast;
+          }
+        }
+      },
+
+      _toastMessage( msg ){
+        if( this.toast ){
+          this.toast.text = msg;
+          this.toast.show();
+        }
+      },
+
+      _toastError( msg ){
+        if( this.errorToast ){
+          this.errorToast.text = msg;
+          this.errorToast.show();
+        }
+      },
+
+      // **********************************************************
+      // FUNCTIONS RE: SUBMITTING FORMS AND GETTING response
+      // Everything needed for form submission (preparation, etc.)
+      // and doing something with the results (display toasts, set errors)
+      // **********************************************************
+
+      /**
+       * Set the right URL in the form's `request` widget (which will
+       * actually make the request)
+      */
+      _prepareToSubmit: function( e ){
+
+        var form = this.form;
+        var request = form.request;
+
+        // If it's a PUT, then the actual URL for the request needs to include
+        // the ID (if present)
+        if( form.getAttribute( 'method' ).toUpperCase() === 'PUT' ){
+
+          // First of all fix https://github.com/PolymerElements/iron-form/pull/143
+          request.body = this.form.serialize();
+          request.params = {};
+
+          // Set the correct URL for the PUT
+          if( this.recordId ){
+            request.url = form.getAttribute('action') + "/" + this.recordId;
+          } else {
+            request.url = form.getAttribute('action');
+          }
+        }
+
+      },
+
+      /**
+       * Set the right error messages in the corresponding fields
+      */
+      _setErrorsInFields( returnObject ){
+        var found;
+        var form = this.form;
+        if( form && returnObject && typeof returnObject === 'object' && Array.isArray( returnObject.errors ) ){
+
+          for( var i = 0, l = returnObject.errors.length; i < l; i ++ ){
+            var error = returnObject.errors[ i ];
+
+            var domField = this.form.$$(`[name='${error.field}']`)
+            if( domField ){
+              domField.errorMessage = error.message;
+              domField.invalid = true;
+            }
+          };
+        }
+      },
+
+      _formError( e ){
+        var returnObject = e.detail.request.xhr.response;
+        if( returnObject && typeof returnObject === 'object' ){
+          this._toastError( returnObject.message );
+        } else {
+          this._toastError( this.defaultErrorMessage );
+        }
+        this._setErrorsInFields( returnObject );
+      },
+
+      _formResponse( e ){
+        if( this.successMessage != '' ){
+          this._toastMessage( this.successMessage );
+        }
+      },
+
+    });
+  </script>
+</dom-module>

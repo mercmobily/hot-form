@@ -2,13 +2,13 @@
 
 <html>
   <head>
-    <title>hot-form-validator test</title>
+    <title>hot-form test</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
     <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
     <script src="../../web-component-tester/browser.js"></script>
 
-    <link rel="import" href="../hot-form-validator.html">
+    <link rel="import" href="../hot-form.html">
 
     <!-- devDependencies -->
     <link rel="import" href="../../iron-form/iron-form.html">
@@ -34,92 +34,92 @@
 
     <test-fixture id="form-validating">
       <template>
-        <hot-form-validator>
+        <hot-form local-toasts>
           <paper-toast id="firstToast"></paper-toast>
           <paper-toast id="secondToast"></paper-toast>
           <form is="iron-form" method="POST" action="submit_validating">
             <paper-input name="maker" id="maker"></paper-input>
             <paper-input name="model" id="model"></paper-input>
           </form>
-        </hot-form-validator>
+        </hot-form>
       </template>
     </test-fixture>
 
     <test-fixture id="form-validating-with-special-message">
       <template>
-        <hot-form-validator success-message="Real success!">
+        <hot-form local-toasts success-message="Real success!">
           <paper-toast></paper-toast>
           <form is="iron-form" method="POST" action="submit_validating">
             <paper-input name="maker" id="maker"></paper-input>
             <paper-input name="model" id="model"></paper-input>
           </form>
-        </hot-form-validator>
+        </hot-form>
       </template>
     </test-fixture>
 
 
     <test-fixture id="form-failing-validation">
       <template>
-        <hot-form-validator>
+        <hot-form local-toast>
           <paper-toast id="firstToast"></paper-toast>
           <paper-toast id="secondToast"></paper-toast>
           <form is="iron-form" method="POST" action="submit_not_validating">
             <paper-input name="maker" id="maker" ></paper-input>
             <paper-input name="model" id="model"></paper-input>
           </form>
-        </hot-form-validator>
+        </hot-form>
       </template>
     </test-fixture>
 
     <test-fixture id="using-local-toast-with-id">
       <template>
-        <hot-form-validator toast-id="secondToast">
+        <hot-form local-toast toast-id="secondToast">
           <paper-toast id="firstToast"></paper-toast>
           <paper-toast id="secondToast"></paper-toast>
           <form is="iron-form" method="POST" action="submit_validating">
             <paper-input name="maker" id="maker" ></paper-input>
             <paper-input name="model" id="model"></paper-input>
           </form>
-        </hot-form-validator>
+        </hot-form>
       </template>
     </test-fixture>
 
     <test-fixture id="using-global-toast">
       <template>
-        <hot-form-validator global-toast>
+        <hot-form>
           <form is="iron-form" method="POST" action="submit_validating">
             <paper-input name="maker" id="maker" ></paper-input>
             <paper-input name="model" id="model"></paper-input>
           </form>
-        </hot-form-validator>
+        </hot-form>
       </template>
     </test-fixture>
 
     <test-fixture id="using-global-toast-with-id">
       <template>
-        <hot-form-validator global-toast toast-id="secondGlobalToast">
+        <hot-form toast-id="secondGlobalToast">
           <form is="iron-form" method="POST" action="submit_validating">
             <paper-input name="maker" id="maker" ></paper-input>
             <paper-input name="model" id="model"></paper-input>
           </form>
-        </hot-form-validator>
+        </hot-form>
       </template>
     </test-fixture>
 
     <test-fixture id="using-global-error-toast">
       <template>
-        <hot-form-validator global-toast error-toast-id="errorGlobalToast" toast-id="secondGlobalToast">
+        <hot-form error-toast-id="errorGlobalToast" toast-id="secondGlobalToast">
           <form is="iron-form" method="POST" action="submit_validating">
             <paper-input name="maker" id="maker" ></paper-input>
             <paper-input name="model" id="model"></paper-input>
           </form>
-        </hot-form-validator>
+        </hot-form>
       </template>
     </test-fixture>
 
     <test-fixture id="using-local-error-toast">
       <template>
-        <hot-form-validator error-toast-id="errorToast" toast-id="secondToast">
+        <hot-form local-toast error-toast-id="errorToast" toast-id="secondToast">
           <paper-toast id="firstToast"></paper-toast>
           <paper-toast id="secondToast"></paper-toast>
           <paper-toast id="errorToast"></paper-toast>
@@ -127,18 +127,18 @@
             <paper-input name="maker" id="maker" ></paper-input>
             <paper-input name="model" id="model"></paper-input>
           </form>
-        </hot-form-validator>
+        </hot-form>
       </template>
     </test-fixture>
 
 
     <script>
 
-      suite('hot-form-validator', function() {
+      suite('hot-form', function() {
 
         test('instantiating the element works', function() {
           var formElement = fixture('form-validating');
-          assert.equal(formElement.is, 'hot-form-validator');
+          assert.equal(formElement.is, 'hot-form');
         });
 
 
