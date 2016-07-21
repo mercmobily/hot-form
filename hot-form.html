@@ -4,7 +4,7 @@
 
 <!--
 
-If you have a record on your database, and want to save it using a web form. You are using Polymer (but you could be using anything, really). You follow tutorials, and you find that everything works as expected: you make up a form (it could be an iron-form), you run it, and the record appears. You think this is a success -- until you put this form in the real world and discover that all those tutorials were lying. They were showing you that something with pedals and two wheels will move faster -- but failed to show you that in order to ride it you also need breaks, lights, a helmet; yes, they are all props. But yes, you always need them.
+Imagine you are using Polymer, you have a record on your database, and want to save it using a web form. **You follow tutorials**, and you find that everything works as expected: you make up a form (it could be an iron-form), you run it, and the record appears. **You think this is a success** -- until you put this form in the real world and discover that **all those tutorials were lying. They were showing you that something with pedals and two wheels will move faster -- but failed to show you that in order to ride it you also need breaks, lights, a helmet;** yes, they are all props. But yes, **you always need them**.
 
 Ask yourself these questions:
 
@@ -18,9 +18,12 @@ Ask yourself these questions:
 
 If the answer is yes, and you are coding this each time from scratch, then maybe you should consider using a decorator element that does _all_ of this for you. Welcome to `hot-form`.
 
+
 `<hot-form>` is an element meant to wrap a `<form is="iron-form">`
 element, to set fields as invalid (with the correct error message) if the server
 returns an error
+
+Imagine you have a form like this:
 
     <hot-form>
       <form is="iron-form" id="form" method="post" action="/stores/polymer">
@@ -29,6 +32,10 @@ returns an error
         <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
       </form>
     </hot-form>
+
+Here is what it does, and how.
+
+## Show error messages, or a custom message in case of success, using a `paper-toast`
 
 The element works by listening to the `on-iron-form-submit` and `on-iron-form-error`
 to see what the server has returned: in case of success, it displays a
@@ -46,13 +53,18 @@ the problematic field as `invalid`, as well as setting the error messages.
 The message is provided with a `<paper-toast>` widget that will be looked for
 as follows:
 
- - If `local-toast` is passed, then it will be searched in `document`
- - Otherwise, it will be searched within the widget
+ - If `local-toast` is passed, then it will be searched in its light DOM. This is the default behaviour, as it's best to have your `paper-toast` as global widgets.
+ - Otherwise, it will be searched in the document (if you really know what you are doing).
 
 In terms of searching:
 
  - If `toast-id` is passed, it will be searched by the corresponding `id` field
  - Otherwise, it will be the first `<paper-toast>` widget found.
+
+You can specify two toasts if you want to: one is for successful messages (hint: green) and one for unsuccessful ones (hint: red). In terms of searching for the error toast:
+
+- If error-toast-id is passed, then that ID is used
+- Otherwise, it's the SECOND toast in order of appearance
 
 For example:
 
@@ -60,29 +72,38 @@ For example:
     ...
     </hot-form>
 
-    <hot-form local-toast toast-id="some-local-toast-id">
-    ...
-    </hot-form>
-
     <hot-form toast-id="some-global-toast-id">
     ...
     </hot-form>
 
-The server response could be 422; for this widget to set the errors properly,
-the return message must be in the following format:
+    <hot-form local-toast toast-id="some-local-toast-id">
+    ...
+    </hot-form>
+
+## Invalidate fields based on server response
+
+The server normally responds either with an OK messsage (200, 201, etc.) or with an error. In case of errors, the server normally will tell you what the problem was, and which fields were affected. Unless you enjoy repeating code, you want the "invalidation" to happen automaticallty.
+
+If the server returns errors (for example 422), `hot-form` will expect a JSON object back from the server like so:
 
     {"message":"Unprocessable Entity","errors":[{"field":"name","message":"Not good!"}]}
 
-This will cause `hot-form` to display the error message `Unprocessable Entity`
-and set the field named `name` as `invalid`, with the invalid message set as
-`Not good!`.
+This will cause `hot-form` to display the error message `Unprocessable Entity` using the error `paper-toast`, and set the field named `name` as `invalid`, with the invalid message set as `Not good!`.
 
-All automatically as it should be.
+If the server returned a non-error, the server will set the "normal" `paper-toast` displaying "Success!", or the string set as success-message:
 
-NOTE: sane-submit will make sure that 1) An invisible button is added to the form
-so that pressing enter on the input fields will submit 2) When the paper-button
-element in the form marked as "submit" is pressed, the form is submitted.
-This option is still undocumented
+    <hot-form success-message="All done, thanks!">
+    ...
+    </hot-form>
+
+
+## Make the right request to the server (PUT or POST), based on record-id
+
+(To be documented)
+
+## Loading of record dynamically, pre-setting form values
+
+(To be documented)
 
 @group Hotplate Elements
 @element hot-form
