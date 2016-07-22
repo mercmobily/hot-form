@@ -4,7 +4,6 @@ Imagine you are using Polymer, you have a **record on your database, and want to
 Ask yourself these questions:
 
 * Do you need to load data before showing the form?
-* What if loading of pre-populated data fails?
 * Do you want to overwrite a record (PUT with an existing ID), or create a new one (POST, no ID) or create a record with an arbitrary ID (PUT with a new ID)? Do you realise that you will need POST or PUT calls?
 * Do you want to display something if the form is a success? Or a failure? If so, how? A paper-toast?
 * Do you realise you will need two different paper-toast widgets, depending on error or success?
@@ -29,8 +28,7 @@ Here is what it does, and how.
 
 The element works by listening to the `on-iron-form-submit` and `on-iron-form-error`
 to see what the server has returned: in case of success, it displays a
-customisable "Success!"; in case of error, it looks at the server response sets
-the problematic field as `invalid`, as well as setting the error messages.
+customisable "Success!"; in case of error, the error message returned by the server as JSON is displayed (see next section for the format).
 
     <hot-form success-message="Record saved!">
       <form is="iron-form" id="form" method="post" action="/stores/polymer">
@@ -53,26 +51,26 @@ In terms of searching:
 
 You can specify two toasts if you want to: one is for successful messages (hint: green) and one for unsuccessful ones (hint: red). In terms of searching for the error toast:
 
-- If error-toast-id is passed, then that ID is used
-- Otherwise, it's the SECOND toast in order of appearance
+- If `error-toast-id` is passed, then that ID is used
+- Otherwise, it's the _second_ toast in order of appearance
 
 For example:
+
+    <hot-form toast-id="some-toast-id">
+    ...
+    </hot-form>
+
+    <hot-form toast-id="some-toast-id" error-toast-id="some-other-toast-id">
+    ...
+    </hot-form>
 
     <hot-form local-toast>
     ...
     </hot-form>
 
-    <hot-form toast-id="some-global-toast-id">
-    ...
-    </hot-form>
-
-    <hot-form local-toast toast-id="some-local-toast-id">
-    ...
-    </hot-form>
-
 ## Invalidate fields based on server response
 
-The server normally responds either with an OK messsage (200, 201, etc.) or with an error. In case of errors, the server normally will tell you what the problem was, and which fields were affected. Unless you enjoy repeating code, you want the "invalidation" to happen automaticallty.
+The server normally responds either with an OK status (200, 201, etc.) or with an error status. In case of errors, the server normally will tell you what the problem was, and which fields were affected. Unless you enjoy repeating code, you want the "invalidation" to happen automaticallty.
 
 If the server returns errors (for example 422), `hot-form` will expect a JSON object back from the server like so:
 
@@ -87,11 +85,11 @@ If the server returned a non-error, the server will set the "normal" `paper-toas
     </hot-form>
 
 
-## Make the right request to the server (PUT or POST), based on record-id
+## Make the right request to the server (PUT or POST), based on `record-id`
 
 (To be documented)
 
-## Load of record dynamically, pre-setting form values
+## Load of record with an AJAX call, pre-setting corresponding form values
 
 (To be documented)
 
@@ -100,7 +98,7 @@ If the server returned a non-error, the server will set the "normal" `paper-toas
 Yes, you have to do these things by hand normally. Every time. Just wrap your form with hot-form, and you won't have to worry about it.
 
 
-    <hot-form no-enter-submit>
+    <hot-form>
     ...
     </hot-form>
 
@@ -112,5 +110,5 @@ If you want to disable "submit by pressing enter", just add `no-enter-submit` to
     </hot-form>
 
 
-If you don't want to submit the form with a button automatically, just avoid setting a button as `type=submit`.
+If you don't want to submit the form with a button automatically, just avoid setting a paper-button as `type=submit`.
 
