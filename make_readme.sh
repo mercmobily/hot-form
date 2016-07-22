@@ -1,5 +1,8 @@
 #!/bin/bash
 
+
+> README.md
+
 IFS=''
 active='0';
 cat  hot-form.html | while read -r "line";do
@@ -15,7 +18,7 @@ cat  hot-form.html | while read -r "line";do
   if [ $? = '0' ];then suppress='1'; fi;
   
 
-  if [ $active = '1' -a $suppress = '0' ];then echo $line;fi;
+  if [ $active = '1' -a $suppress = '0' ];then echo $line >> README.md;fi;
 
   echo $line | grep "<!--" > /dev/null
   if [ $? = '0' ];then active='1'; fi;
