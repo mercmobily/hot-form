@@ -8,14 +8,17 @@ Imagine you are using Polymer, you have a **record on your database, and want to
 
 Ask yourself these questions:
 
-* Do you need to load data before showing the form?
+* Do you need to load data from the server before showing the form?
 * Do you want to overwrite a record (PUT with an existing ID), or create a new one (POST, no ID) or create a record with an arbitrary ID (PUT with a new ID)? Do you realise that you will need POST or PUT calls?
+* Do you want to display a message saying that the data is being submitted?
+* Do you want to disble the submit button while the data is being submitted?
 * Do you want to display something if the form is a success? Or a failure? If so, how? A paper-toast?
 * Do you realise you will need two different paper-toast widgets, depending on error or success?
 * Do you want to highlight the problem fields if the form is NOT a success?
-* Do you want to sibmit the form when the user presses ENTER on a paper-input widget?
+* Do you want to submit the form when the user presses ENTER on a paper-input widget?
+* Do you want to refresh the data with the saved info coming back from the server after saving?
 
-If the answer is yes, and you are coding this each time from scratch, then maybe you should consider using a decorator element that does _all_ of this for you. Welcome to `hot-form`.
+If the answer is yes, and you are coding this each time from scratch, then maybe you should consider using a decorator element that does _all_ of this for you. **Welcome to `hot-form`**.
 
 Imagine you have a form like this:
 
@@ -89,7 +92,6 @@ If the server returned a non-error, the server will set the "normal" `paper-toas
     ...
     </hot-form>
 
-
 ## Make the right request to the server (PUT or POST), based on `record-id`
 
 (To be documented)
@@ -122,6 +124,12 @@ If you don't want to submit the form with a button automatically, just avoid set
 @demo demo/index.html
 -->
 
+<!--
+TODO:
+  * Rewrite `effectiveChildren` calls, because right now only 1st level are found right now
+  * Write system to submit forms as you type, check that it works with real-time toggle (4h)
+
+-->
 
 <dom-module id="hot-form">
   <template>
@@ -132,10 +140,10 @@ If you don't want to submit the form with a button automatically, just avoid set
     </style>
 
     <!-- The data loader, used to load recordId if required-->
-    <iron-ajax id="dataLoader" on-response="_dataLoaderResponse" on-error="_dataLoaderError"></iron-ajax>
+    <iron-ajax id="request" on-response="_dataLoaderResponse" on-error="_dataLoaderError"></iron-ajax>
 
     <!-- Containing DIV, used to catch iron-form's events that will bubble up here -->
-    <div on-iron-form-response="_formResponse" on-iron-form-error="_formError" id="content">
+    <div on-iron-form-submit="_formSubmit" on-iron-form-response="_formResponse" on-iron-form-error="_formError" id="content">
 
       <!-- iron-a11y widget used to catch if a user presses ENTER in an input field -->
       <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="_a11ySubmit"></iron-a11y-keys>
@@ -161,29 +169,35 @@ If you don't want to submit the form with a button automatically, just avoid set
           notify: true,
         },
 
-        /**
-         * If `true`, it will load record from server to pre-populate the form
-         * making an AJAX call. Uses this.dataLoader
-        */
-        recordIdAutoLoad: {
+        resetAfterSubmit: {
           type: Boolean,
-          value: true
+          value: false,
         },
 
         /**
-         * By default, the 'value' property is assigned to the rata returned from
-         * autoLoad. However, some widgets need spefic properties set.
-         * This will map them
+         * By default, if recordId is set the form will make an AJAX GET call to the
+         * action URL to fetch the current value. This will deactivate this feature
         */
-        propertyMap: {
-          type: Object,
-          value: function(){
-            return {
-              'PAPER-TOGGLE-BUTTON': 'checked'
-            };
-          }
+        noRecordIdAutoLoad: {
+          type: Boolean,
+          value: false
         },
 
+
+        actionAfterPostResponse: {
+          type: String,
+          value: 'reset'
+        },
+
+        actionAfterPutResponse: {
+          type: String,
+          value: 'set'
+        },
+
+
+        request: {
+          type: Object
+        },
 
         /**
          * The ID of the paper-toast element
@@ -194,6 +208,11 @@ If you don't want to submit the form with a button automatically, just avoid set
          * The ID of the paper-toast element used for errors
         */
         errorToastId: String,
+
+        /**
+         * The ID of the paper-toast element used for progress
+        */
+        submitToastId: String,
 
         /**
          * If set to `true`, the toast element will be searched in the
@@ -214,6 +233,14 @@ If you don't want to submit the form with a button automatically, just avoid set
         successMessage: {
           type: String,
           value: "Success!"
+        },
+
+        /**
+         * Submit message given in case of success
+        */
+        submitMessage: {
+          type: String,
+          value: "Saving..."
         },
 
         /**
@@ -247,8 +274,14 @@ If you don't want to submit the form with a button automatically, just avoid set
 
       ready: function(){
 
+        // Sets the 'request' attribute
+        this.request = this.$.request;
+
         // Sets the form
-        this.form = form = this.queryEffectiveChildren( 'form' );
+        this.form = this.queryEffectiveChildren( 'form' );
+
+        // Sets the form
+        this.submitButton = this.form.queryEffectiveChildren( 'paper-button[type=submit]' );
 
         // Load data (if so required) into the form, depending on recordId
         this._loadData();
@@ -259,7 +292,6 @@ If you don't want to submit the form with a button automatically, just avoid set
 
         // Set the right toasts
         this._setToasts();
-
       },
 
       // **********************************************************
@@ -270,16 +302,14 @@ If you don't want to submit the form with a button automatically, just avoid set
       // **********************************************************
 
       _wirePaperButtonToSubmit: function(){
-        var paperButton = this.form.queryEffectiveChildren('paper-button[type=submit]');
-        if( paperButton ){
-          this.listen( paperButton, 'tap', '_onPaperButtonTap');
+        if( this.submitButton ){
+          this.listen( this.submitButton, 'tap', '_onPaperButtonTap');
         };
       },
 
       _unwirePaperButtonToSubmit: function(){
-        var paperButton = this.form.queryEffectiveChildren('paper-button[type=submit]');
-        if( paperButton ){
-          this.unlisten( paperButton, 'tap', '_onPaperButtonTap');
+        if( this.submitButton ){
+          this.unlisten( this.submitButton, 'tap', '_onPaperButtonTap');
         };
       },
 
@@ -292,7 +322,7 @@ If you don't want to submit the form with a button automatically, just avoid set
 
           // Only trigger submission for paper-input widgets
           if( e.detail.keyboardEvent.srcElement.tagName === 'PAPER-INPUT') {
-            this.form.submit();
+            this._maybeSubmit();
           }
 
         }
@@ -300,10 +330,17 @@ If you don't want to submit the form with a button automatically, just avoid set
 
       // Submit the form when the right button is tapped
       _onPaperButtonTap: function(){
-        this.form.submit();
+        this._maybeSubmit();
       },
 
+      _maybeSubmit: function(){
 
+        // Don't re-submit if loading
+        if( this.form.request.loading ) return;
+
+        // Actually submit the firm
+        this.form.submit();
+      },
 
       // **********************************************************
       // RECORD LOADING
@@ -325,11 +362,11 @@ If you don't want to submit the form with a button automatically, just avoid set
       */
       _loadData: function(){
 
-        var preloader = this.$.dataLoader;
+        var preloader = this.$.request;
 
         // Set the correct URL for the GET, as well as handleAs
-        if( this.recordId && this.recordIdAutoLoad ){
-          preloader.url = form.getAttribute('action') + "/" + this.recordId;
+        if( this.recordId && ! this.noRecordIdAutoLoad ){
+          preloader.url = this.form.getAttribute('action') + "/" + this.recordId;
           preloader.method="GET";
           preloader.handleAs = 'json';
 
@@ -343,34 +380,19 @@ If you don't want to submit the form with a button automatically, just avoid set
       /**
        * The request by `preloader` worked: pre-fill the form's information
        * with whatever came back.
-       * TODO: Add a filter to "prep" the returned data
       */
       _dataLoaderResponse: function(){
         console.log("RESPONDED!");
 
-        var r = this.$.dataLoader.lastResponse;
-        if( typeof r === 'object' && r !== null ){
-
-          for( var k in r ){
-            var domField = this.form.$$(`[name='${k}']`)
-            //console.log(domField.value );
-
-            if( domField ){
-              var valueProperty;
-              valueProperty = this.propertyMap[ domField.tagName ] || 'value';
-              domField[ valueProperty ] = r[ k ];
-            }
-          };
-        }
+        this._setFieldsAsObject( this.$.request.lastResponse );
       },
+
 
       /**
        * The request by `preloader` didn't work.
-       * TODO: Decide what to do
       */
       _dataLoaderError: function(){
-        console.log("RESPONDED WITH ERROR!");
-        console.log( this.dataLoader );
+        //console.log("RESPONDED WITH ERROR!");
       },
 
 
@@ -416,10 +438,25 @@ If you don't want to submit the form with a button automatically, just avoid set
           } else {
             this.errorToast = document.querySelectorAll( 'paper-toast' )[ 1 ] || this.toast;
           }
+
+          // Sets the errorToast. It will be the same as this.toast,
+          // unless error-toast-id is specified
+          if( this.submitToastId ){
+            this.submitToast = document.querySelector( '#' + this.submitToastId );
+          } else {
+            this.submitToast = document.querySelectorAll( 'paper-toast' )[ 2 ] || this.toast;
+          }
         }
       },
 
-      _toastMessage( msg ){
+      _toastSubmit( msg ){
+        if( this.submitToast ){
+          this.submitToast.text = msg;
+          this.submitToast.show();
+        }
+      },
+
+      _toastResponse( msg ){
         if( this.toast ){
           this.toast.text = msg;
           this.toast.show();
@@ -450,18 +487,17 @@ If you don't want to submit the form with a button automatically, just avoid set
 
         // If it's a PUT, then the actual URL for the request needs to include
         // the ID (if present)
-        if( form.getAttribute( 'method' ).toUpperCase() === 'PUT' ){
+        //if( form.getAttribute( 'method' ).toUpperCase() === 'PUT' ){
 
-          // First of all fix https://github.com/PolymerElements/iron-form/pull/143
-          request.body = this.form.serialize();
-          request.params = {};
+        //request.body = this.form.serialize();
+        //request.params = {};
 
-          // Set the correct URL for the PUT
-          if( this.recordId ){
-            request.url = form.getAttribute('action') + "/" + this.recordId;
-          } else {
-            request.url = form.getAttribute('action');
-          }
+        // Set the correct URL for the PUT
+        if( this.recordId ){
+          request.url = form.getAttribute('action') + "/" + this.recordId;
+          request.method = "PUT";
+        } else {
+          request.url = form.getAttribute('action');
         }
 
       },
@@ -486,6 +522,19 @@ If you don't want to submit the form with a button automatically, just avoid set
         }
       },
 
+      _formSubmit( e ){
+
+        // Make submit button busy, now that submission is actually underway
+        this.submitButton.disabled = true;
+        this.form.disabled = true;
+
+        // Give a submit message
+        if( this.submitMessage != '' ){
+          this._toastSubmit( this.submitMessage );
+        }
+
+      },
+
       _formError( e ){
         var returnObject = e.detail.request.xhr.response;
         if( returnObject && typeof returnObject === 'object' ){
@@ -494,13 +543,59 @@ If you don't want to submit the form with a button automatically, just avoid set
           this._toastError( this.defaultErrorMessage );
         }
         this._setErrorsInFields( returnObject );
+        this.submitButton.disabled = false;
+        this.form.disabled = false;
       },
 
       _formResponse( e ){
         if( this.successMessage != '' ){
-          this._toastMessage( this.successMessage );
+          this._toastResponse( this.successMessage );
+        }
+        this.submitButton.disabled = false;
+        this.form.disabled = false;
+
+
+        if( this.recordId ){
+          propToCheck = 'actionAfterPutResponse';
+        } else {
+          propToCheck = 'actionAfterPostResponse';
+        }
+
+        // Either
+        // * reset the form (default for POST)
+        // * set fields depending on what came back (default for PUT)
+        if( this[ propToCheck ] === 'reset' ){
+          this.form.reset();
+        } else if( this[ propToCheck ] === 'set' ){
+          this._setFieldsAsObject( e.detail.response );
+        }
+
+      },
+
+
+      // **********************************************************
+      // UTILITY FUNCTIONS
+      // **********************************************************
+      _setFieldsAsObject: function( r ){
+        if( typeof r === 'object' && r !== null ){
+
+          for( var k in r ){
+            var domField = this.form.$$(`[name='${k}']`)
+
+            if( domField ){
+
+              if (this.form._usesCheckedInsteadOfValue( domField ) ){
+                domField.checked  = r[ k ];
+                valueProperty = 'checked';
+              } else {
+                domField.value = r[ k ]
+              }
+            }
+          };
         }
       },
+
+
 
     });
   </script>
