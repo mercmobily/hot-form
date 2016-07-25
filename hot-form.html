@@ -124,12 +124,54 @@ If you don't want to submit the form with a button automatically, just avoid set
 @demo demo/index.html
 -->
 
+
 <!--
 TODO:
-  * Rewrite `effectiveChildren` calls, because right now only 1st level are found right now
-  * Write system to submit forms as you type, check that it works with real-time toggle (4h)
-
+* 4. Write system to submit forms as you type, check that it works with real-time toggle (4h)
 -->
+
+
+
+<script>
+  /*
+   * Monkey patching of Polymer to add recursive queries on effective children
+   * To be added to its own Github module
+   * https://github.com/Polymer/polymer/issues/3805
+  */
+  Polymer.DomApi.prototype.queryDistributedElementsDeep = function( selector, doNotVisitSelector ){
+    var list = [];
+    function visit( node ){
+      var c$ = Polymer.dom( node ).getEffectiveChildNodes();
+      for( var i = 0, l = c$.length, c; (i < l), ( c = c$[ i ] ); i ++ ){
+        if (c.nodeType === Node.ELEMENT_NODE ){
+
+          // If selector matches, add
+          if( Polymer.DomApi.matchesSelector.call( c, selector ) ){
+            list.push( c );
+          }
+
+          // Visit element's children, unless it matches doNotvisitSelector
+          if( !doNotVisitSelector || !Polymer.DomApi.matchesSelector.call( c, doNotVisitSelector ) ){
+            visit( c );
+          }
+        }
+      }
+    }
+    visit( this );
+    return list;
+  }
+
+  Polymer.Base.queryEffectiveChildrenDeep = function( slctr ){
+    var e$ = Polymer.dom(this).queryDistributedElementsDeep(slctr);
+    return e$ && e$[0];
+  }
+
+  Polymer.Base.queryAllEffectiveChildrenDeep = function( slctr ){
+    return Polymer.dom(this).queryDistributedElementsDeep(slctr);
+  }
+
+
+</script>
 
 <dom-module id="hot-form">
   <template>
@@ -258,10 +300,6 @@ TODO:
       ],
 
 
-      // **********************************************************
-      // LIFECYCLE FUNCTIONS
-      // **********************************************************
-
       attached: function(){
         this.listen( this.form, 'iron-form-presubmit', '_prepareToSubmit');
         this._wirePaperButtonToSubmit();
@@ -278,13 +316,13 @@ TODO:
         this.request = this.$.request;
 
         // Sets the form
-        this.form = this.queryEffectiveChildren( 'form' );
+        this.form = this.queryEffectiveChildrenDeep( 'form' );
 
         // Sets the form
-        this.submitButton = this.form.queryEffectiveChildren( 'paper-button[type=submit]' );
+        this.submitButton = Polymer.dom( this.form ).queryDistributedElementsDeep( 'paper-button[type=submit]' )[0];
 
-        // Load data (if so required) into the form, depending on recordId
-        this._loadData();
+          // Load data (if so required) into the form, depending on recordId
+          this._loadData();
 
         // Sets the a11y target as the form in the light DOM
         // It wasn't done declaratively because the form is in the light DOM
@@ -373,7 +411,12 @@ TODO:
           // This will generate the request, which -- as indicated in the
           // preloader's declarative definition -- will cause either `_dataLoaderResponse`
           // or `_dataLoaderError` to be called.
-          preloader.generateRequest();
+
+          // This is async to give containing widgets a chance to listen to events
+          // before firing 
+          this.async( function(){
+            preloader.generateRequest();
+          })
         }
       },
 
@@ -408,17 +451,17 @@ TODO:
         if( this.localToast ){
 
           if( this.toastId ){
-            this.toast = this.queryEffectiveChildren( '#' + this.toastId );
+            this.toast = this.queryEffectiveChildrenDeep( '#' + this.toastId );
           } else {
-            this.toast = this.queryEffectiveChildren( 'paper-toast' );
+            this.toast = this.queryEffectiveChildrenDeep( 'paper-toast' );
           }
 
           // Sets the errorToast. It will be the same as this.toast,
           // unless error-toast-id is specified
           if( this.errorToastId ){
-            this.errorToast = this.queryEffectiveChildren( '#' + this.errorToastId );
+            this.errorToast = this.queryEffectiveChildrenDeep( '#' + this.errorToastId );
           } else {
-            this.errorToast = this.queryAllEffectiveChildren( 'paper-toast' )[ 1 ] || this.toast;
+            this.errorToast = this.queryAllEffectiveChildrenDeep( 'paper-toast' )[ 1 ] || this.toast;
           }
 
         // LIGHT DOM TOAST
@@ -569,9 +612,7 @@ TODO:
         } else if( this[ propToCheck ] === 'set' ){
           this._setFieldsAsObject( e.detail.response );
         }
-
       },
-
 
       // **********************************************************
       // UTILITY FUNCTIONS
@@ -594,8 +635,6 @@ TODO:
           };
         }
       },
-
-
 
     });
   </script>
