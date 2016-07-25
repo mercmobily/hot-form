@@ -13,7 +13,6 @@ Ask yourself these questions:
 * Do you want to display a message saying that the data is being submitted?
 * Do you want to disble the submit button while the data is being submitted?
 * Do you want to display something if the form is a success? Or a failure? If so, how? A paper-toast?
-* Do you realise you will need two different paper-toast widgets, depending on error or success?
 * Do you want to highlight the problem fields if the form is NOT a success?
 * Do you want to submit the form when the user presses ENTER on a paper-input widget?
 * Do you want to refresh the data with the saved info coming back from the server after saving?
@@ -32,49 +31,6 @@ Imagine you have a form like this:
 
 Here is what it does, and how.
 
-## Show error messages, or a custom message in case of success, using a `paper-toast`
-
-The element works by listening to the `on-iron-form-submit` and `on-iron-form-error`
-to see what the server has returned: in case of success, it displays a
-customisable "Success!"; in case of error, the error message returned by the server as JSON is displayed (see next section for the format).
-
-    <hot-form success-message="Record saved!">
-      <form is="iron-form" id="form" method="post" action="/stores/polymer">
-        <paper-input required id="name" name="name" label="Your name"></paper-input>
-        <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
-        <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
-      </form>
-    </hot-form>
-
-The message is provided with a `<paper-toast>` widget that will be looked for
-as follows:
-
- - If `local-toast` is passed, then it will be searched in its light DOM. This is the default behaviour, as it's best to have your `paper-toast` as global widgets.
- - Otherwise, it will be searched in the document (if you really know what you are doing).
-
-In terms of searching:
-
- - If `toast-id` is passed, it will be searched by the corresponding `id` field
- - Otherwise, it will be the first `<paper-toast>` widget found.
-
-You can specify two toasts if you want to: one is for successful messages (hint: green) and one for unsuccessful ones (hint: red). In terms of searching for the error toast:
-
-- If `error-toast-id` is passed, then that ID is used
-- Otherwise, it's the _second_ toast in order of appearance
-
-For example:
-
-    <hot-form toast-id="some-toast-id">
-    ...
-    </hot-form>
-
-    <hot-form toast-id="some-toast-id" error-toast-id="some-other-toast-id">
-    ...
-    </hot-form>
-
-    <hot-form local-toast>
-    ...
-    </hot-form>
 
 ## Invalidate fields based on server response
 
@@ -84,13 +40,8 @@ If the server returns errors (for example 422), `hot-form` will expect a JSON ob
 
     {"message":"Unprocessable Entity","errors":[{"field":"name","message":"Not good!"}]}
 
-This will cause `hot-form` to display the error message `Unprocessable Entity` using the error `paper-toast`, and set the field named `name` as `invalid`, with the invalid message set as `Not good!`.
+This will cause `hot-form` to set the field named `name` as `invalid`, with the invalid message set as `Not good!`.
 
-If the server returned a non-error, the server will set the "normal" `paper-toast` displaying "Success!", or the string set as success-message:
-
-    <hot-form success-message="All done, thanks!">
-    ...
-    </hot-form>
 
 ## Make the right request to the server (PUT or POST), based on `record-id`
 
@@ -184,15 +135,12 @@ TODO:
     <!-- The data loader, used to load recordId if required-->
     <iron-ajax id="request" on-response="_dataLoaderResponse" on-error="_dataLoaderError"></iron-ajax>
 
-    <!-- Containing DIV, used to catch iron-form's events that will bubble up here -->
-    <div on-iron-form-submit="_formSubmit" on-iron-form-response="_formResponse" on-iron-form-error="_formError" id="content">
 
-      <!-- iron-a11y widget used to catch if a user presses ENTER in an input field -->
-      <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="_a11ySubmit"></iron-a11y-keys>
+    <!-- iron-a11y widget used to catch if a user presses ENTER in an input field -->
+    <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="_a11ySubmit"></iron-a11y-keys>
 
-      <!-- The actual content distributed, from the light DOM -->
-      <content id="contentNode"></content>
-    </div>
+    <!-- The actual content distributed, from the light DOM -->
+    <content id="contentNode"></content>
 
   </template>
 
@@ -236,31 +184,9 @@ TODO:
           value: 'set'
         },
 
-
         request: {
           type: Object
         },
-
-        /**
-         * The ID of the paper-toast element
-        */
-        toastId: String,
-
-        /**
-         * The ID of the paper-toast element used for errors
-        */
-        errorToastId: String,
-
-        /**
-         * The ID of the paper-toast element used for progress
-        */
-        submitToastId: String,
-
-        /**
-         * If set to `true`, the toast element will be searched in the
-         * `document` rather than within the widget
-        */
-        localToast: Boolean,
 
         /**
          * If set to `true`, pressing ENTER in a paper-input field will submit.
@@ -303,11 +229,19 @@ TODO:
       attached: function(){
         this.listen( this.form, 'iron-form-presubmit', '_prepareToSubmit');
         this._wirePaperButtonToSubmit();
+
+        this.listen( this.form, 'iron-form-submit', '_formSubmit' );
+        this.listen( this.form, 'iron-form-response', '_formResponse' );
+        this.listen( this.form, 'iron-form-error', '_formError' );
       },
 
       detached: function(){
         this.unlisten( this.form, 'iron-form-presubmit', '_prepareToSubmit');
         this._unwirePaperButtonToSubmit();
+
+        this.unlisten( this.form, 'iron-form-submit', '_formSubmit' );
+        this.unlisten( this.form, 'iron-form-response', '_formResponse' );
+        this.unlisten( this.form, 'iron-form-error', '_formError' );
       },
 
       ready: function(){
@@ -328,8 +262,6 @@ TODO:
         // It wasn't done declaratively because the form is in the light DOM
         this.$.a11y.target=this.form;
 
-        // Set the right toasts
-        this._setToasts();
       },
 
       // **********************************************************
@@ -413,7 +345,7 @@ TODO:
           // or `_dataLoaderError` to be called.
 
           // This is async to give containing widgets a chance to listen to events
-          // before firing 
+          // before firing
           this.async( function(){
             preloader.generateRequest();
           })
@@ -438,85 +370,21 @@ TODO:
         //console.log("RESPONDED WITH ERROR!");
       },
 
-
-      // **********************************************************
-      // SET THE RIGHT TOASTS DEPENDING ON CONFIGURATION
-      // This will set `this.toastid` and `this.errorToastId`,
-      // which will be used to display errors
-      // **********************************************************
-      _setToasts: function(){
-
-        // LOCAL TOAST
-        // Using a local toast, maybe with ID and maybe without
-        if( this.localToast ){
-
-          if( this.toastId ){
-            this.toast = this.queryEffectiveChildrenDeep( '#' + this.toastId );
-          } else {
-            this.toast = this.queryEffectiveChildrenDeep( 'paper-toast' );
-          }
-
-          // Sets the errorToast. It will be the same as this.toast,
-          // unless error-toast-id is specified
-          if( this.errorToastId ){
-            this.errorToast = this.queryEffectiveChildrenDeep( '#' + this.errorToastId );
-          } else {
-            this.errorToast = this.queryAllEffectiveChildrenDeep( 'paper-toast' )[ 1 ] || this.toast;
-          }
-
-        // LIGHT DOM TOAST
-        // Using a toast in the light DOM, maybe with ID and maybe without
-        } else {
-
-          if( this.toastId ){
-            this.toast = document.querySelector( '#' + this.toastId );
-          } else {
-            this.toast = document.querySelector( 'paper-toast');
-          }
-
-          // Sets the errorToast. It will be the same as this.toast,
-          // unless error-toast-id is specified
-          if( this.errorToastId ){
-            this.errorToast = document.querySelector( '#' + this.errorToastId );
-          } else {
-            this.errorToast = document.querySelectorAll( 'paper-toast' )[ 1 ] || this.toast;
-          }
-
-          // Sets the errorToast. It will be the same as this.toast,
-          // unless error-toast-id is specified
-          if( this.submitToastId ){
-            this.submitToast = document.querySelector( '#' + this.submitToastId );
-          } else {
-            this.submitToast = document.querySelectorAll( 'paper-toast' )[ 2 ] || this.toast;
-          }
-        }
+      _fireEventSubmit( msg ){
+        this.fire( 'user-message-info', { message: msg } );
       },
 
-      _toastSubmit( msg ){
-        if( this.submitToast ){
-          this.submitToast.text = msg;
-          this.submitToast.show();
-        }
+      _fireEventResponse( msg ){
+        this.fire( 'user-message-success', { message: msg } );
       },
 
-      _toastResponse( msg ){
-        if( this.toast ){
-          this.toast.text = msg;
-          this.toast.show();
-        }
-      },
-
-      _toastError( msg ){
-        if( this.errorToast ){
-          this.errorToast.text = msg;
-          this.errorToast.show();
-        }
+      _fireEventError( msg ){
+        this.fire( 'user-message-error', { message: msg } );
       },
 
       // **********************************************************
       // FUNCTIONS RE: SUBMITTING FORMS AND GETTING response
       // Everything needed for form submission (preparation, etc.)
-      // and doing something with the results (display toasts, set errors)
       // **********************************************************
 
       /**
@@ -573,7 +441,7 @@ TODO:
 
         // Give a submit message
         if( this.submitMessage != '' ){
-          this._toastSubmit( this.submitMessage );
+          this._fireEventSubmit( this.submitMessage );
         }
 
       },
@@ -581,9 +449,9 @@ TODO:
       _formError( e ){
         var returnObject = e.detail.request.xhr.response;
         if( returnObject && typeof returnObject === 'object' ){
-          this._toastError( returnObject.message );
+          this._fireEventError( returnObject.message );
         } else {
-          this._toastError( this.defaultErrorMessage );
+          this._fireEventError( this.defaultErrorMessage );
         }
         this._setErrorsInFields( returnObject );
         this.submitButton.disabled = false;
@@ -592,7 +460,7 @@ TODO:
 
       _formResponse( e ){
         if( this.successMessage != '' ){
-          this._toastResponse( this.successMessage );
+          this._fireEventResponse( this.successMessage );
         }
         this.submitButton.disabled = false;
         this.form.disabled = false;
