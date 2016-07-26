@@ -3,19 +3,19 @@ Imagine you are using Polymer, you have a **record on your database, and want to
 
 Ask yourself these questions:
 
-* Do you need to load data before showing the form?
+* Do you need to load data from the server before showing the form?
 * Do you want to overwrite a record (PUT with an existing ID), or create a new one (POST, no ID) or create a record with an arbitrary ID (PUT with a new ID)? Do you realise that you will need POST or PUT calls?
-* Do you want to display something if the form is a success? Or a failure? If so, how? A paper-toast?
-* Do you realise you will need two different paper-toast widgets, depending on error or success?
 * Do you want to highlight the problem fields if the form is NOT a success?
-* Do you want to sibmit the form when the user presses ENTER on a paper-input widget?
+* Do you want to submit the form when the user presses ENTER on a paper-input widget?
+* Do you want to refresh the data with the saved info coming back from the server after saving?
+* Do you want to make it possible for other widgets to display messages to the user?
 
-If the answer is yes, and you are coding this each time from scratch, then maybe you should consider using a decorator element that does _all_ of this for you. Welcome to `hot-form`.
+If the answer is yes, and you are coding this each time from scratch, then maybe you should consider using a decorator element that does _all_ of this for you. **Welcome to `hot-form`**.
 
 Imagine you have a form like this:
 
     <hot-form>
-      <form is="iron-form" id="form" method="post" action="/stores/polymer">
+      <form is="iron-form" method="post" action="/stores/polymer">
         <paper-input required id="name" name="name" label="Your name"></paper-input>
         <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
         <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
@@ -23,50 +23,6 @@ Imagine you have a form like this:
     </hot-form>
 
 Here is what it does, and how.
-
-## Show error messages, or a custom message in case of success, using a `paper-toast`
-
-The element works by listening to the `on-iron-form-submit` and `on-iron-form-error`
-to see what the server has returned: in case of success, it displays a
-customisable "Success!"; in case of error, the error message returned by the server as JSON is displayed (see next section for the format).
-
-    <hot-form success-message="Record saved!">
-      <form is="iron-form" id="form" method="post" action="/stores/polymer">
-        <paper-input required id="name" name="name" label="Your name"></paper-input>
-        <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
-        <paper-button type="submit" raised on-click="_submit">Click!</paper-button>
-      </form>
-    </hot-form>
-
-The message is provided with a `<paper-toast>` widget that will be looked for
-as follows:
-
- - If `local-toast` is passed, then it will be searched in its light DOM. This is the default behaviour, as it's best to have your `paper-toast` as global widgets.
- - Otherwise, it will be searched in the document (if you really know what you are doing).
-
-In terms of searching:
-
- - If `toast-id` is passed, it will be searched by the corresponding `id` field
- - Otherwise, it will be the first `<paper-toast>` widget found.
-
-You can specify two toasts if you want to: one is for successful messages (hint: green) and one for unsuccessful ones (hint: red). In terms of searching for the error toast:
-
-- If `error-toast-id` is passed, then that ID is used
-- Otherwise, it's the _second_ toast in order of appearance
-
-For example:
-
-    <hot-form toast-id="some-toast-id">
-    ...
-    </hot-form>
-
-    <hot-form toast-id="some-toast-id" error-toast-id="some-other-toast-id">
-    ...
-    </hot-form>
-
-    <hot-form local-toast>
-    ...
-    </hot-form>
 
 ## Invalidate fields based on server response
 
@@ -76,39 +32,65 @@ If the server returns errors (for example 422), `hot-form` will expect a JSON ob
 
     {"message":"Unprocessable Entity","errors":[{"field":"name","message":"Not good!"}]}
 
-This will cause `hot-form` to display the error message `Unprocessable Entity` using the error `paper-toast`, and set the field named `name` as `invalid`, with the invalid message set as `Not good!`.
+This will cause `hot-form` to set the field named `name` as `invalid`, with the invalid message set as `Not good!`.
 
-If the server returned a non-error, the server will set the "normal" `paper-toast` displaying "Success!", or the string set as success-message:
+## Emit events so that other widgets can display messages
 
-    <hot-form success-message="All done, thanks!">
-    ...
-    </hot-form>
+The element will fire the following messages:
 
+* `user-message-info`. Fired when there is a message to give the user. `e.detail` will have `{ message: msg }`
+* `user-message-success`. Fired when a successful response is received. `e.detail` will have `{ message: msg }`
+* `user-message-error`. Fired when an error response is received. `e.detail` will have `{ message: msg }`
+
+These events will bubble up. So, you can put elements that listen to them, and display these messages to the user.
 
 ## Make the right request to the server (PUT or POST), based on `record-id`
 
-(To be documented)
+If `record-id` is set, the element will make sure that, the `request` object used by the `iron-ajax` form is manipulatd before sending it, so that the `action` attribute is changed to `/original/url/:recordId`, and the method used by `iron-ajax` is `PUT`. This means that the element can be used to make spefific PUT calls on specific records, based on `recordId`. For example:
+
+    <hot-form id="hot-form" record-id="57902ef29b880cd678a3d7a9">
+      <form is="iron-form" id="iron-form" method="POST" action="/stores/polymer">
+        <paper-input required id="name" name="name" label="Your name"></paper-input>
+        <paper-input required id="surname" name="surname" label="Your surname"></paper-input>
+        <paper-input required type="number" id="age" name="age" label="Your age"></paper-input>
+        <paper-toggle-button id="active" name="active" label="Active?">Active?</paper-toggle-button>
+        <paper-button raised type="submit">Click!</paper-button>
+      </form>
+    </hot-form>
+
+When the form is submitted, `PUT /stores/polymer/57902ef29b880cd678a3d7a9` will actually be called.
 
 ## Load of record with an AJAX call, pre-setting corresponding form values
 
-(To be documented)
+If `record-id` is set, the element will make a GET AJAX call to the `action` URL (in the example above, `GET /stores/polymer/57902ef29b880cd678a3d7a9` fetching the current record's value. It will also pre-set the form's value to
+match those returned by the server.
+Note: the response must be a JSON record, where each field's key corresponds to the element's `name` attribute. In the example above, a valid JSON in return would be:
 
-## Submit form when you press enter on a `paper-input` field, or when clicking on the button marked as `type=submit`.
+    {
+      "name":"Tony",
+      "surname":"Mobily",
+      "age":40,
+      "active":false,
+      "id":"57902ef29b880cd678a3d7a9",
+    }
 
-Yes, you have to do these things by hand normally. Every time. Just wrap your form with hot-form, and you won't have to worry about it.
+This means that you can create your form, _and_ know that the existing record's value are already set.
 
+## Sane submission when pressing "enter" or clicking the submit button
+
+This element allows you to automatically submit form when you press enter on a `paper-input` field, or when clicking on the button marked as `type=submit`.
+
+Yes, you have to do these things by hand normally (!). Every time. Just wrap your form with hot-form, and you won't have to worry about it.
 
     <hot-form>
     ...
     </hot-form>
-
 
 If you want to disable "submit by pressing enter", just add `no-enter-submit` to `hot-form`.
 
     <hot-form no-enter-submit>
     ...
     </hot-form>
-
 
 If you don't want to submit the form with a button automatically, just avoid setting a paper-button as `type=submit`.
 

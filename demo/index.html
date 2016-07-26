@@ -26,26 +26,11 @@
 
     <style is="custom-style" include="demo-pages-shared-styles">
 
-        paper-toast#firstGlobalToast {
-          --paper-toast-background-color: green;
-          --paper-toast-color: white;
-        };
-        paper-toast#secondGlobalToast {
-          --paper-toast-background-color: blue;
-          --paper-toast-color: white;
-        };
-        paper-toast#errorGlobalToast {
-          --paper-toast-background-color: red;
-          --paper-toast-color: white;
-        };
-
     </style>
   </head>
   <body>
 
     <paper-toast id="firstGlobalToast"></paper-toast>
-    <paper-toast id="errorGlobalToast"></paper-toast>
-    <paper-toast id="secondGlobalToast"></paper-toast>
 
     <script>
       sinon.log = function( m ){console.log("Message:", m)};
@@ -81,7 +66,7 @@
         <template>
 
           <hot-form>
-            <form id="form" is="iron-form" method="POST" action="submit_validating">
+            <form is="iron-form" method="POST" action="submit_validating">
               <paper-input name="maker" id="maker" ></paper-input>
               <paper-input name="model" id="model"></paper-input>
               <paper-button type="submit" raised>Submit!</paper-button>
@@ -108,149 +93,6 @@
         </template>
       </demo-snippet>
     </div>
-
-
-    <div class="vertical-section-container centered">
-      <h3>Basic hot-form, using global toast element, specifying error toast, failing</h3>
-      <demo-snippet>
-        <template>
-
-          <hot-form error-toast-id="errorGlobalToast">
-            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
-              <paper-input name="maker" id="maker" ></paper-input>
-              <paper-input name="model" id="model"></paper-input>
-              <paper-button type="submit" raised>Submit!</paper-button>
-            </form>
-          </hot-form>
-
-        </template>
-      </demo-snippet>
-    </div>
-
-    <div class="vertical-section-container centered">
-      <h3>Basic hot-form, using specified global toast element, passing</h3>
-      <demo-snippet>
-        <template>
-
-          <hot-form toast-id="secondGlobalToast" error-toast-id="errorGlobalToast">
-            <form id="form" is="iron-form" method="POST" action="submit_validating">
-              <paper-input name="maker" id="maker" ></paper-input>
-              <paper-input name="model" id="model"></paper-input>
-              <paper-button type="submit" raised>Submit!</paper-button>
-            </form>
-          </hot-form>
-
-        </template>
-      </demo-snippet>
-    </div>
-
-
-    <h1>Local toasts</h1>
-
-    <div class="vertical-section-container centered">
-      <h3>Basic hot-form, passing</h3>
-      <demo-snippet>
-        <template>
-
-          <style is="custom-style">
-
-          paper-toast#firstToast1 {
-            --paper-toast-background-color: white;
-            --paper-toast-color: black;
-          };
-
-            paper-toast#errorToast1 {
-              --paper-toast-background-color: red;
-              --paper-toast-color: white;
-            };
-
-
-          </style>
-
-          <hot-form local-toast error-toast-id="errorToast1">
-            <paper-toast id="firstToast1"></paper-toast>
-            <paper-toast id="errorToast1"></paper-toast>
-            <form id="form" is="iron-form" method="POST" action="submit_validating">
-              <paper-input name="maker" id="maker" ></paper-input>
-              <paper-input name="model" id="model"></paper-input>
-              <paper-button type="submit" raised>Submit!</paper-button>
-            </form>
-          </hot-form>
-
-        </template>
-      </demo-snippet>
-    </div>
-
-
-    <div class="vertical-section-container centered">
-      <h3>Basic hot-form, failing</h3>
-      <demo-snippet>
-        <template>
-
-          <style is="custom-style">
-
-            paper-toast#errorToast2 {
-              --paper-toast-background-color: red;
-              --paper-toast-color: white;
-            };
-
-            paper-toast#firstToast2 {
-              --paper-toast-background-color: green;
-              --paper-toast-color: white;
-            };
-          </style>
-
-          <hot-form local-toast error-toast-idd="errorToast2">
-            <paper-toast id="firstToast2"></paper-toast>
-            <paper-toast id="errorToast2"></paper-toast>
-            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
-              <paper-input name="maker" id="maker" ></paper-input>
-              <paper-input name="model" id="model"></paper-input>
-              <paper-button type="submit" raised>Submit!</paper-button>
-            </form>
-          </hot-form>
-
-        </template>
-      </demo-snippet>
-    </div>
-
-    <div class="vertical-section-container centered">
-      <h3>Basic hot-form, using specified toast element, passing</h3>
-      <demo-snippet>
-        <template>
-
-          <style is="custom-style">
-              paper-toast#firstToast3 {
-                --paper-toast-background-color: pink;
-                --paper-toast-color: white;
-              };
-
-              paper-toast#secondToast3 {
-                --paper-toast-background-color: blue;
-                --paper-toast-color: white;
-              };
-              paper-toast#errorToast3 {
-                --paper-toast-background-color: purple;
-                --paper-toast-color: white;
-              };
-
-          </style>
-
-          <hot-form local-toast toast-id="secondToast3" error-toast-id="errorToast3">
-            <paper-toast id="firstToast3"></paper-toast>
-            <paper-toast id="secondToast3"></paper-toast>
-            <paper-toast id="errorToast3"></paper-toast>
-            <form id="form" is="iron-form" method="POST" action="submit_not_validating">
-              <paper-input name="maker" id="maker" ></paper-input>
-              <paper-input name="model" id="model"></paper-input>
-              <paper-button type="submit" raised>Submit!</paper-button>
-            </form>
-          </hot-form>
-
-        </template>
-      </demo-snippet>
-    </div>
-
 
   </body>
 </html>

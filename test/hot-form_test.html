@@ -21,9 +21,6 @@
   </head>
   <body>
 
-    <paper-toast id="firstGlobalToast"></paper-toast>
-    <paper-toast id="secondGlobalToast"></paper-toast>
-    <paper-toast id="errorGlobalToast"></paper-toast>
 
     <test-fixture id="ajax">
       <template>
@@ -34,7 +31,7 @@
 
     <test-fixture id="form-validating">
       <template>
-        <hot-form local-toasts>
+        <hot-form>
           <paper-toast id="firstToast"></paper-toast>
           <paper-toast id="secondToast"></paper-toast>
           <form is="iron-form" method="POST" action="submit_validating">
@@ -47,7 +44,7 @@
 
     <test-fixture id="form-validating-with-special-message">
       <template>
-        <hot-form local-toasts success-message="Real success!">
+        <hot-form success-message="Real success!">
           <paper-toast></paper-toast>
           <form is="iron-form" method="POST" action="submit_validating">
             <paper-input name="maker" id="maker"></paper-input>
@@ -60,7 +57,7 @@
 
     <test-fixture id="form-failing-validation">
       <template>
-        <hot-form local-toast>
+        <hot-form>
           <paper-toast id="firstToast"></paper-toast>
           <paper-toast id="secondToast"></paper-toast>
           <form is="iron-form" method="POST" action="submit_not_validating">
@@ -71,113 +68,14 @@
       </template>
     </test-fixture>
 
-    <test-fixture id="using-local-toast-with-id">
-      <template>
-        <hot-form local-toast toast-id="secondToast">
-          <paper-toast id="firstToast"></paper-toast>
-          <paper-toast id="secondToast"></paper-toast>
-          <form is="iron-form" method="POST" action="submit_validating">
-            <paper-input name="maker" id="maker" ></paper-input>
-            <paper-input name="model" id="model"></paper-input>
-          </form>
-        </hot-form>
-      </template>
-    </test-fixture>
-
-    <test-fixture id="using-global-toast">
-      <template>
-        <hot-form>
-          <form is="iron-form" method="POST" action="submit_validating">
-            <paper-input name="maker" id="maker" ></paper-input>
-            <paper-input name="model" id="model"></paper-input>
-          </form>
-        </hot-form>
-      </template>
-    </test-fixture>
-
-    <test-fixture id="using-global-toast-with-id">
-      <template>
-        <hot-form toast-id="secondGlobalToast">
-          <form is="iron-form" method="POST" action="submit_validating">
-            <paper-input name="maker" id="maker" ></paper-input>
-            <paper-input name="model" id="model"></paper-input>
-          </form>
-        </hot-form>
-      </template>
-    </test-fixture>
-
-    <test-fixture id="using-global-error-toast">
-      <template>
-        <hot-form error-toast-id="errorGlobalToast" toast-id="secondGlobalToast">
-          <form is="iron-form" method="POST" action="submit_validating">
-            <paper-input name="maker" id="maker" ></paper-input>
-            <paper-input name="model" id="model"></paper-input>
-          </form>
-        </hot-form>
-      </template>
-    </test-fixture>
-
-    <test-fixture id="using-local-error-toast">
-      <template>
-        <hot-form local-toast error-toast-id="errorToast" toast-id="secondToast">
-          <paper-toast id="firstToast"></paper-toast>
-          <paper-toast id="secondToast"></paper-toast>
-          <paper-toast id="errorToast"></paper-toast>
-          <form is="iron-form" method="POST" action="submit_validating">
-            <paper-input name="maker" id="maker" ></paper-input>
-            <paper-input name="model" id="model"></paper-input>
-          </form>
-        </hot-form>
-      </template>
-    </test-fixture>
-
 
     <script>
-
       suite('hot-form', function() {
 
         test('instantiating the element works', function() {
           var formElement = fixture('form-validating');
           assert.equal(formElement.is, 'hot-form');
         });
-
-
-        suite("Uses the right toast element", function(){
-
-          var fx;
-
-          test("Uses default local toast", function(){
-            fx = fixture('form-validating');
-            expect( fx.toast.id ).to.equal('firstToast');
-          });
-
-          test("Uses local toast specifying ID", function(){
-            fx = fixture( 'using-local-toast-with-id');
-            expect( fx.toast.id ).to.equal('secondToast');
-          });
-
-          test("Uses default global toast", function(){
-            fx = fixture( 'using-global-toast');
-            expect( fx.toast.id ).to.equal('firstGlobalToast');
-          });
-
-          test("Uses global toast specifying ID", function(){
-            fx = fixture( 'using-global-toast-with-id' );
-            expect( fx.toast.id ).to.equal('secondGlobalToast');
-          });
-
-          test("Uses global error toast specifying ID", function(){
-            fx = fixture( 'using-global-error-toast' );
-            expect( fx.errorToast.id ).to.equal('errorGlobalToast');
-          });
-
-          test("Uses local error toast specifying ID", function(){
-            fx = fixture( 'using-local-error-toast');
-            expect( fx.errorToast.id ).to.equal('errorToast');
-          });
-
-        });
-
 
         suite("Check server validations", function(){
 
