@@ -173,7 +173,7 @@ If you don't want to submit the form with a button automatically, just avoid set
       properties: {
 
         /**
-         * The record ID, used to load data from server (if recordIdAutoLoad is set)
+         * The record ID, used to load data from server (if recordIdAutoload is set)
         */
         recordId: {
           type: String,
@@ -185,7 +185,7 @@ If you don't want to submit the form with a button automatically, just avoid set
          * By default, if `record-id` is set the form will make an AJAX GET call to the
          * action URL to fetch the current value. This will deactivate this feature
         */
-        noRecordIdAutoLoad: {
+        noRecordIdAutoload: {
           type: Boolean,
           value: false
         },
@@ -362,7 +362,7 @@ If you don't want to submit the form with a button automatically, just avoid set
       _loadData: function(){
 
         // Set the correct URL for the GET, as well as handleAs
-        if( this.recordId && ! this.noRecordIdAutoLoad ){
+        if( this.recordId && ! this.noRecordIdAutoload ){
           this.request.url = this.form.getAttribute('action') + "/" + this.recordId;
           this.request.method="GET";
           this.request.handleAs = 'json';
