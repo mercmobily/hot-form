@@ -315,12 +315,14 @@ If you don't want to submit the form with a button automatically, just avoid set
 
       _a11ySubmit: function( e ){
 
+        var ke = Polymer.dom( e.detail.keyboardEvent );
+
         // Only trigger submission if noEnterSubmit is not
         // (I know, double negatives right?)
         if( ! this.noEnterSubmit ){
 
           // Only trigger submission for paper-input widgets
-          if( e.detail.keyboardEvent.srcElement.tagName === 'PAPER-INPUT') {
+          if( ke.localTarget.tagName === 'PAPER-INPUT') {
             this._maybeSubmit();
           }
 
