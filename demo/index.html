@@ -183,9 +183,10 @@
       <div class="vertical-section-container centered">
         <h3>hot-form NOT pre-loading elements</h3>
         <p>Since there is no <code>record-id</code> set, the form will do a POST request without record ID.</p>
-        <p>The `action-after-post-response` attribute is set to `reset`. So, the form will be reset after submission.</p>
+        <p>The `action-after-post-response` attribute is set to `reset`. So Since there is no <code>record-id</code> set, the form will do a POST request without record ID.</p>
         <demo-snippet>
           <template>
+
             <hot-form action-after-post-response="reset">
               <form id="form" is="iron-form" method="POST" action="/car">
                 <paper-input name="maker" id="maker" ></paper-input>
@@ -197,6 +198,11 @@
           </template>
         </demo-snippet>
       </div>
+
+
+
+
+
 
     </hot-user-message-toasts>
   </body>
