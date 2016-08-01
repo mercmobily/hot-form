@@ -1,11 +1,12 @@
 {
   "name": "hot-form",
-  "description": "Form decorator to make iron-forms really powerful. It will 1) submit on enter or clicking on the Submit button 2) Preload data with AJAX and populate the form 3) Submit data using PUT if a record ID is set 4) Update fields depending on server response 5) Invalidate fields providing server responses in case of server error 6) Fire up events, suitable for UI messages",
+  "description": "Form decorator to make iron-forms really powerful.",
   "main": "hot-form.html",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.6.0",
     "iron-a11y-keys": "^1.0.6",
-    "iron-ajax": "PolymerElements/iron-ajax#^1.2.0"
+    "iron-ajax": "PolymerElements/iron-ajax#^1.2.0",
+    "hot-deep-target-behavior": "^0.1.1"
   },
   "devDependencies": {
     "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
