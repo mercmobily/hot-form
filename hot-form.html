@@ -1,6 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
 <link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
+<link rel="import" href="../hot-deep-target-behavior/hot-deep-target-behavior.html">
 
 <!--
 
@@ -112,46 +113,6 @@ If you don't want to submit the form with a button automatically, just avoid set
 @demo demo/index.html
 -->
 
-<script>
-  /*
-   * Monkey patching of Polymer to add recursive queries on effective children
-   * To be added to its own Github module
-   * https://github.com/Polymer/polymer/issues/3805
-  */
-  Polymer.DomApi.prototype.queryDistributedElementsDeep = function( selector, doNotVisitSelector ){
-    var list = [];
-    function visit( node ){
-      var c$ = Polymer.dom( node ).getEffectiveChildNodes();
-      for( var i = 0, l = c$.length, c; (i < l), ( c = c$[ i ] ); i ++ ){
-        if (c.nodeType === Node.ELEMENT_NODE ){
-
-          // If selector matches, add
-          if( Polymer.DomApi.matchesSelector.call( c, selector ) ){
-            list.push( c );
-          }
-
-          // Visit element's children, unless it matches doNotvisitSelector
-          if( !doNotVisitSelector || !Polymer.DomApi.matchesSelector.call( c, doNotVisitSelector ) ){
-            visit( c );
-          }
-        }
-      }
-    }
-    visit( this );
-    return list;
-  }
-
-  Polymer.Base.queryEffectiveChildrenDeep = function( slctr ){
-    var e$ = Polymer.dom(this).queryDistributedElementsDeep(slctr);
-    return e$ && e$[0];
-  }
-
-  Polymer.Base.queryAllEffectiveChildrenDeep = function( slctr ){
-    return Polymer.dom(this).queryDistributedElementsDeep(slctr);
-  }
-
-
-</script>
 
 <dom-module id="hot-form">
   <template>
@@ -163,7 +124,6 @@ If you don't want to submit the form with a button automatically, just avoid set
 
     <!-- The data loader, used to load recordId if required-->
     <iron-ajax id="request" on-response="_dataLoaderResponse" on-error="_dataLoaderError"></iron-ajax>
-
 
     <!-- iron-a11y widget used to catch if a user presses ENTER in an input field -->
     <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="_a11ySubmit"></iron-a11y-keys>
@@ -289,8 +249,8 @@ If you don't want to submit the form with a button automatically, just avoid set
         // Sets the form
         this.form = this.queryEffectiveChildrenDeep( 'form' );
 
-        // Sets the form
-        this.submitButton = Polymer.dom( this.form ).queryDistributedElementsDeep( 'paper-button[type=submit]' )[0];
+        // Sets the form's button, looking into the form
+        this.submitButton = this.queryEffectiveChildrenDeep( 'paper-button[type=submit]' );
 
         // Load data (if so required) into the form, depending on recordId
         this._loadData();
