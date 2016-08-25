@@ -230,6 +230,7 @@ If you don't want to submit the form with a button automatically, just avoid set
         this.listen( this.form, 'iron-form-submit', '_formSubmit' );
         this.listen( this.form, 'iron-form-response', '_formResponse' );
         this.listen( this.form, 'iron-form-error', '_formError' );
+
       },
 
       detached: function(){
@@ -239,6 +240,11 @@ If you don't want to submit the form with a button automatically, just avoid set
         this.unlisten( this.form, 'iron-form-submit', '_formSubmit' );
         this.unlisten( this.form, 'iron-form-response', '_formResponse' );
         this.unlisten( this.form, 'iron-form-error', '_formError' );
+        this.unlisten( this.form, 'change', '_formChanged');
+      },
+
+      _formChanged: function(){
+        this.submitButton.disabled = !this.form.validate();
       },
 
       ready: function(){
@@ -271,12 +277,14 @@ If you don't want to submit the form with a button automatically, just avoid set
       _wirePaperButtonToSubmit: function(){
         if( this.submitButton ){
           this.listen( this.submitButton, 'tap', '_onPaperButtonTap');
+          this.listen( this.form, 'change', '_formChanged');
         };
       },
 
       _unwirePaperButtonToSubmit: function(){
         if( this.submitButton ){
           this.unlisten( this.submitButton, 'tap', '_onPaperButtonTap');
+          this.unlisten( this.form, 'change', '_formChanged');
         };
       },
 
@@ -363,16 +371,16 @@ If you don't want to submit the form with a button automatically, just avoid set
         //console.log("RESPONDED WITH ERROR!");
       },
 
-      _fireEventSubmit( msg ){
-        this.fire( 'user-message-info', { message: msg } );
+      _fireEventSubmit( msg, e ){
+        this.fire( 'user-message-info', { message: msg, originalEvent: e } );
       },
 
-      _fireEventResponse( msg ){
-        this.fire( 'user-message-success', { message: msg } );
+      _fireEventResponse( msg, e ){
+        this.fire( 'user-message-success', { message: msg, originalEvent: e } );
       },
 
-      _fireEventError( msg ){
-        this.fire( 'user-message-error', { message: msg } );
+      _fireEventError( msg, e ){
+        this.fire( 'user-message-error', { message: msg, originalEvent: e } );
       },
 
       // **********************************************************
@@ -434,7 +442,7 @@ If you don't want to submit the form with a button automatically, just avoid set
 
         // Give a submit message
         if( this.submitMessage != '' ){
-          this._fireEventSubmit( this.submitMessage );
+          this._fireEventSubmit( this.submitMessage, e );
         }
       },
 
