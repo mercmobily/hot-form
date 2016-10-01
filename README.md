@@ -38,9 +38,9 @@ This will cause `hot-form` to set the field named `name` as `invalid`, with the 
 
 The element will fire the following messages:
 
-* `user-message-info`. Fired when there is a message to give the user. `e.detail` will have `{ message: msg }`
-* `user-message-success`. Fired when a successful response is received. `e.detail` will have `{ message: msg }`
-* `user-message-error`. Fired when an error response is received. `e.detail` will have `{ message: msg }`
+* `user-message-info`. Fired when a form is submitted. `e.detail` will have `{ message: msg }`. The default message is `Saving...`, and it can be changed by setting `submit-message`.
+* `user-message-success`. Fired when a successful response is received. `e.detail` will have `{ message: msg }`. The default message is `Success!`, and it can be changed by setting `success-message`.
+* `user-message-error`. Fired when an error response is received. `e.detail` will have `{ message: msg }`. The default message will depend on the `error` field returned by the server. If the `error` field isn't there, the defaut  message is `Error!` and it can be changed by setting `default-error-message`.
 
 These events will bubble up. So, you can put elements that listen to them, and display these messages to the user.
 
@@ -75,6 +75,14 @@ Note: the response must be a JSON record, where each field's key corresponds to 
     }
 
 This means that you can create your form, _and_ know that the existing record's value are already set.
+
+Record autoload when `record-id` is set is on by default, and can be turned off with the no-record-id-autoload attribute.
+
+## Reset form when response arrives, or set values based on returned values
+
+When getting the response after issuing a POST request (no `record-id` appended), the form is automatically reset. This can be changed with the `action-after-post-response` attribute, that can be set to `set`, `reset` (the default) or `none`.
+
+When getting the response after issuing a PUT request (with `record-id` appended to the request), the form is automatically set to the values that came back from the server. This means that if the server did any manipulation to the data, the form will display the correct, current information. This can be changed with the `action-after-put-response` attribute, that can be set to `set` (the default), `reset` or `none`.
 
 ## Sane submission when pressing "enter" or clicking the submit button
 

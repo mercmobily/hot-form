@@ -372,15 +372,21 @@ If you don't want to submit the form with a button automatically, just avoid set
       },
 
       _fireEventSubmit( msg, e ){
-        this.fire( 'user-message-info', { message: msg, originalEvent: e } );
+        if( msg ) {
+          this.fire( 'user-message-info', { message: msg, originalEvent: e } );
+        }
       },
 
       _fireEventResponse( msg, e ){
-        this.fire( 'user-message-success', { message: msg, originalEvent: e } );
+        if( msg ){
+          this.fire( 'user-message-success', { message: msg, originalEvent: e } );
+        }
       },
 
       _fireEventError( msg, e ){
-        this.fire( 'user-message-error', { message: msg, originalEvent: e } );
+        if( msg ){
+          this.fire( 'user-message-error', { message: msg, originalEvent: e } );
+        }
       },
 
       // **********************************************************
@@ -449,9 +455,9 @@ If you don't want to submit the form with a button automatically, just avoid set
       _formError( e ){
         var returnObject = e.detail.request.xhr.response;
         if( returnObject && typeof returnObject === 'object' ){
-          this._fireEventError( returnObject.message );
+          this._fireEventError( returnObject.message, e );
         } else {
-          this._fireEventError( this.defaultErrorMessage );
+          this._fireEventError( this.defaultErrorMessage, e );
         }
         this._setErrorsInFields( returnObject );
         if( this.submitButton ) this.submitButton.disabled = false;
@@ -460,7 +466,7 @@ If you don't want to submit the form with a button automatically, just avoid set
 
       _formResponse( e ){
         if( this.successMessage != '' ){
-          this._fireEventResponse( this.successMessage );
+          this._fireEventResponse( this.successMessage, e );
         }
         if( this.submitButton ) this.submitButton.disabled = false;
         this.form.disabled = false;
@@ -493,10 +499,12 @@ If you don't want to submit the form with a button automatically, just avoid set
             if( domField ){
 
               if (this.form._usesCheckedInsteadOfValue( domField ) ){
-                domField.checked  = r[ k ];
-                valueProperty = 'checked';
+                if( typeof r[k] !== 'undefined' ){
+                  domField.checked  = r[ k ];
+                  valueProperty = 'checked';
+                }
               } else {
-                domField.value = r[ k ]
+                if( typeof r[k] !== 'undefined' ) domField.value = r[ k ]
               }
             }
           };
