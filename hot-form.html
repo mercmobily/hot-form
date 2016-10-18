@@ -244,7 +244,11 @@ If you don't want to submit the form with a button automatically, just avoid set
       },
 
       _formChanged: function(){
-        this.submitButton.disabled = !this.form.validate();
+        //TODO: Check why this was here in the first place. It causes
+        // two major problems;
+        // * Submit button is out of tabindex, makes it annoying to tab+enter to submit
+        // * As soon as a field is entered, all other fields go red
+        //this.submitButton.disabled = !this.form.validate();
       },
 
       ready: function(){
