@@ -331,7 +331,7 @@ If you don't want to submit the form with a button automatically, just avoid set
       /**
        * If recordId changes, then new values will need to be loaded
       */
-      _changedRecordId( recordId ){
+      _changedRecordId: function( recordId ){
         if( this.form && this.form._readied ){
           this._loadData();
         }
@@ -375,19 +375,19 @@ If you don't want to submit the form with a button automatically, just avoid set
         //console.log("RESPONDED WITH ERROR!");
       },
 
-      _fireEventSubmit( msg, e ){
+      _fireEventSubmit: function( msg, e ){
         if( msg ) {
           this.fire( 'user-message-info', { message: msg, originalEvent: e } );
         }
       },
 
-      _fireEventResponse( msg, e ){
+      _fireEventResponse: function( msg, e ){
         if( msg ){
           this.fire( 'user-message-success', { message: msg, originalEvent: e } );
         }
       },
 
-      _fireEventError( msg, e ){
+      _fireEventError: function( msg, e ){
         if( msg ){
           this.fire( 'user-message-error', { message: msg, originalEvent: e } );
         }
@@ -427,7 +427,7 @@ If you don't want to submit the form with a button automatically, just avoid set
       /**
        * Set the right error messages in the corresponding fields
       */
-      _setErrorsInFields( returnObject ){
+      _setErrorsInFields: function( returnObject ){
         var found;
         var form = this.form;
         if( form && returnObject && typeof returnObject === 'object' && Array.isArray( returnObject.errors ) ){
@@ -435,7 +435,7 @@ If you don't want to submit the form with a button automatically, just avoid set
           for( var i = 0, l = returnObject.errors.length; i < l; i ++ ){
             var error = returnObject.errors[ i ];
 
-            var domField = this.form.$$(`[name='${error.field}']`)
+            var domField = this.form.$$("[name='" + error.field + "']")
             if( domField ){
               domField.errorMessage = error.message;
               domField.invalid = true;
@@ -444,7 +444,7 @@ If you don't want to submit the form with a button automatically, just avoid set
         }
       },
 
-      _formSubmit( e ){
+      _formSubmit: function( e ){
 
         // Make submit button busy, now that submission is actually underway
         if( this.submitButton ) this.submitButton.disabled = true;
@@ -456,7 +456,7 @@ If you don't want to submit the form with a button automatically, just avoid set
         }
       },
 
-      _formError( e ){
+      _formError: function( e ){
         var returnObject = e.detail.request.xhr.response;
         if( returnObject && typeof returnObject === 'object' ){
           this._fireEventError( returnObject.message, e );
@@ -468,7 +468,7 @@ If you don't want to submit the form with a button automatically, just avoid set
         this.form.disabled = false;
       },
 
-      _formResponse( e ){
+      _formResponse: function( e ){
         if( this.successMessage != '' ){
           this._fireEventResponse( this.successMessage, e );
         }
@@ -498,7 +498,7 @@ If you don't want to submit the form with a button automatically, just avoid set
         if( typeof r === 'object' && r !== null ){
 
           for( var k in r ){
-            var domField = this.form.$$(`[name='${k}']`)
+            var domField = this.form.$$("[name='" + k + "']")
 
             if( domField ){
 
