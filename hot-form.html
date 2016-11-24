@@ -40,6 +40,8 @@ If the server returns errors (for example 422), `hot-form` will expect a JSON ob
 
 This will cause `hot-form` to set the field named `name` as `invalid`, with the invalid message set as `Not good!`.
 
+**NOTE**: in some cases, the actual submitting field is a hidden one, whereas the UI input field is only used for input. In such a case, you can assign the `vname` property to the UI field, which will get the error message in case the server responds with one.
+
 ## Emit events so that other widgets can display messages
 
 The element will fire the following messages:
@@ -193,6 +195,12 @@ If you don't want to submit the form with a button automatically, just avoid set
         noEnterSubmit: Boolean,
 
         /**
+         * If set to `true`, this widget will _not_ add the recordId at the end of the submit
+         * URL when making a put. Use with care.
+        */
+        noRecordIdAppend: Boolean,
+
+        /**
          * Message given in case of success. Defaults to "Success!"
         */
         successMessage: {
@@ -216,6 +224,8 @@ If you don't want to submit the form with a button automatically, just avoid set
           type: String,
           value: "Error!"
         },
+
+
       },
 
       observers: [
@@ -416,7 +426,7 @@ If you don't want to submit the form with a button automatically, just avoid set
 
         // Set the correct URL for the PUT
         if( this.recordId ){
-          request.url = form.getAttribute('action') + "/" + this.recordId;
+          request.url = form.getAttribute('action') + ( this.noRecordIdAppend ? '' : ( "/" + this.recordId ) );
           request.method = "PUT";
         } else {
           request.url = form.getAttribute('action');
@@ -436,6 +446,8 @@ If you don't want to submit the form with a button automatically, just avoid set
             var error = returnObject.errors[ i ];
 
             var domField = this.form.$$("[name='" + error.field + "']")
+            if(! domField || domField.type == 'hidden' ) domField = this.form.$$("[vname='" + error.field + "']")
+
             if( domField ){
               domField.errorMessage = error.message;
               domField.invalid = true;
@@ -466,6 +478,9 @@ If you don't want to submit the form with a button automatically, just avoid set
         this._setErrorsInFields( returnObject );
         if( this.submitButton ) this.submitButton.disabled = false;
         this.form.disabled = false;
+
+        this._setOrResetForm( e );
+
       },
 
       _formResponse: function( e ){
@@ -474,7 +489,13 @@ If you don't want to submit the form with a button automatically, just avoid set
         }
         if( this.submitButton ) this.submitButton.disabled = false;
         this.form.disabled = false;
+        this._setOrResetForm( e );
 
+      },
+
+      _setOrResetForm: function( e ){
+
+        var propToCheck;
         if( this.recordId ){
           propToCheck = 'actionAfterPutResponse';
         } else {
@@ -489,6 +510,7 @@ If you don't want to submit the form with a button automatically, just avoid set
         } else if( this[ propToCheck ] === 'set' ){
           this._setFieldsAsObject( e.detail.response );
         }
+
       },
 
       // **********************************************************
