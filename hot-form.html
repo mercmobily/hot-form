@@ -250,16 +250,8 @@ If you don't want to submit the form with a button automatically, just avoid set
         this.unlisten( this.form, 'iron-form-submit', '_formSubmit' );
         this.unlisten( this.form, 'iron-form-response', '_formResponse' );
         this.unlisten( this.form, 'iron-form-error', '_formError' );
-        this.unlisten( this.form, 'change', '_formChanged');
       },
 
-      _formChanged: function(){
-        //TODO: Check why this was here in the first place. It causes
-        // two major problems;
-        // * Submit button is out of tabindex, makes it annoying to tab+enter to submit
-        // * As soon as a field is entered, all other fields go red
-        //this.submitButton.disabled = !this.form.validate();
-      },
 
       ready: function(){
 
@@ -270,7 +262,7 @@ If you don't want to submit the form with a button automatically, just avoid set
         this.form = this.queryEffectiveChildrenDeep( 'form' );
 
         // Sets the form's button, looking into the form
-        this.submitButton = this.queryEffectiveChildrenDeep( 'paper-button[type=submit]' );
+        this.submitButtons = this.queryAllEffectiveChildrenDeep( 'paper-button[type=submit]' );
 
         // Load data (if so required) into the form, depending on recordId
         this._loadData();
@@ -289,16 +281,19 @@ If you don't want to submit the form with a button automatically, just avoid set
       // **********************************************************
 
       _wirePaperButtonToSubmit: function(){
-        if( this.submitButton ){
-          this.listen( this.submitButton, 'tap', '_onPaperButtonTap');
-          this.listen( this.form, 'change', '_formChanged');
+
+        if( this.submitButtons.length ){
+          this.submitButtons.forEach( ( b ) => {
+            this.listen( b, 'tap', '_onPaperButtonTap');
+          })
         };
       },
 
       _unwirePaperButtonToSubmit: function(){
-        if( this.submitButton ){
-          this.unlisten( this.submitButton, 'tap', '_onPaperButtonTap');
-          this.unlisten( this.form, 'change', '_formChanged');
+        if( this.submitButtons.length ){
+          this.submitButtons.forEach( ( b ) => {
+            this.unlisten( b, 'tap', '_onPaperButtonTap');
+          });
         };
       },
 
@@ -459,7 +454,13 @@ If you don't want to submit the form with a button automatically, just avoid set
       _formSubmit: function( e ){
 
         // Make submit button busy, now that submission is actually underway
-        if( this.submitButton ) this.submitButton.disabled = true;
+        if( this.submitButtons.length ){
+
+          this.submitButtons.forEach( ( b ) => {
+            b.disabled = true;
+          });
+
+        }
         this.form.disabled = true;
 
         // Give a submit message
@@ -476,7 +477,13 @@ If you don't want to submit the form with a button automatically, just avoid set
           this._fireEventError( this.defaultErrorMessage, e );
         }
         this._setErrorsInFields( returnObject );
-        if( this.submitButton ) this.submitButton.disabled = false;
+
+        if( this.submitButtons.length ){
+          this.submitButtons.forEach( ( b ) => {
+            b.disabled = false;
+          });
+        }
+
         this.form.disabled = false;
 
         //this._setOrResetForm( e );
@@ -486,7 +493,13 @@ If you don't want to submit the form with a button automatically, just avoid set
         if( this.successMessage != '' ){
           this._fireEventResponse( this.successMessage, e );
         }
-        if( this.submitButton ) this.submitButton.disabled = false;
+
+        if( this.submitButtons.length ){
+          this.submitButtons.forEach( ( b ) => {
+            b.disabled = false;
+          });
+        }
+
         this.form.disabled = false;
         this._setOrResetForm( e );
       },
