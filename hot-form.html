@@ -225,6 +225,12 @@ If you don't want to submit the form with a button automatically, just avoid set
           value: "Error!"
         },
 
+        /**
+         * Suffix to be added to all PUT requests
+        */
+        putSuffix: {
+          type: String,
+        },
 
       },
 
@@ -421,7 +427,11 @@ If you don't want to submit the form with a button automatically, just avoid set
 
         // Set the correct URL for the PUT
         if( this.recordId ){
-          request.url = form.getAttribute('action') + ( this.noRecordIdAppend ? '' : ( "/" + this.recordId ) );
+          var requestUrl = form.getAttribute('action') + ( this.noRecordIdAppend ? '' : ( "/" + this.recordId ) );
+          if( this.putSuffix ){
+            requestUrl = requestUrl + this.putSuffix;
+            request.url = requestUrl;
+          }
           request.method = "PUT";
         } else {
           request.url = form.getAttribute('action');
