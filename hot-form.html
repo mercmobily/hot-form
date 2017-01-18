@@ -198,7 +198,10 @@ If you don't want to submit the form with a button automatically, just avoid set
          * If set to `true`, this widget will _not_ add the recordId at the end of the submit
          * URL when making a put. Use with care.
         */
-        noRecordIdAppend: Boolean,
+        noRecordIdAppend: {
+          type: Boolean,
+          default: false
+        },
 
         /**
          * Message given in case of success. Defaults to "Success!"
@@ -430,8 +433,8 @@ If you don't want to submit the form with a button automatically, just avoid set
           var requestUrl = form.getAttribute('action') + ( this.noRecordIdAppend ? '' : ( "/" + this.recordId ) );
           if( this.putSuffix ){
             requestUrl = requestUrl + this.putSuffix;
-            request.url = requestUrl;
           }
+          request.url = requestUrl;
           request.method = "PUT";
         } else {
           request.url = form.getAttribute('action');
