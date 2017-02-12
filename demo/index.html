@@ -161,13 +161,13 @@
 
 
       <div class="vertical-section-container centered">
-        <h3>hot-form NOT pre-loading elements</h3>
+        <h3>hot-form NOT pre-loading elements (using <code>no-autoload</code>)</h3>
         <p>Since <code>record-id</code> is set, it will still make a PUT request</p>
 
         <demo-snippet>
           <template>
 
-            <hot-form record-id="car1" no-record-id-autoload>
+            <hot-form record-id="car1" no-autoload>
               <form id="form" is="iron-form" method="POST" action="/car">
                 <paper-input name="maker" id="maker" ></paper-input>
                 <paper-input name="model" id="model"></paper-input>
@@ -181,7 +181,7 @@
 
 
       <div class="vertical-section-container centered">
-        <h3>hot-form NOT pre-loading elements</h3>
+        <h3>hot-form doing POST rather than PUT (no record-id)</h3>
         <p>Since there is no <code>record-id</code> set, the form will do a POST request without record ID.</p>
         <p>The `action-after-post-response` attribute is set to `reset`. So Since there is no <code>record-id</code> set, the form will do a POST request without record ID.</p>
         <demo-snippet>
@@ -198,9 +198,6 @@
           </template>
         </demo-snippet>
       </div>
-
-
-
 
 
 
