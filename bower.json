@@ -1,10 +1,11 @@
 {
   "name": "hot-form",
-  "description": "Form decorator to make iron-forms really powerful.",
+  "description": "Powerful steroid injection for iron-form: auto-save, auto-load, validation, and more",
   "main": "hot-form.html",
   "keywords": [
     "web-components",
-    "forms"
+    "forms",
+    "mvc"
   ],
   "dependencies": {
     "polymer": "Polymer/polymer#^1.6.0",
