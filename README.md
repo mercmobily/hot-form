@@ -34,6 +34,8 @@ If the server returns errors (for example 422), `hot-form` will expect a JSON ob
 
 This will cause `hot-form` to set the field named `name` as `invalid`, with the invalid message set as `Not good!`.
 
+**NOTE**: in some cases, the actual submitting field is a hidden one, whereas the UI input field is only used for input. In such a case, you can assign the `vname` property to the UI field, which will get the error message in case the server responds with one.
+
 ## Emit events so that other widgets can display messages
 
 The element will fire the following messages:
@@ -46,7 +48,7 @@ These events will bubble up. So, you can put elements that listen to them, and d
 
 ## Make the right request to the server (PUT or POST), based on `record-id`
 
-If `record-id` is set, the element will make sure that, the `request` object used by the `iron-ajax` form is manipulatd before sending it, so that the `action` attribute is changed to `/original/url/:recordId`, and the method used by `iron-ajax` is `PUT`. This means that the element can be used to make spefific PUT calls on specific records, based on `recordId`. For example:
+If `record-id` is set, the element will make sure that the `request` object used by the `iron-ajax` form is manipulatd before sending it, so that the `action` attribute is changed to `/original/url/:recordId` (with `:recordId` appended), and the method used by `iron-ajax` is `PUT`. This means that the element can be used to make spefific PUT calls on specific records, based on `recordId`. For example:
 
     <hot-form id="hot-form" record-id="57902ef29b880cd678a3d7a9">
       <form is="iron-form" id="iron-form" method="POST" action="/stores/polymer">
@@ -60,11 +62,22 @@ If `record-id` is set, the element will make sure that, the `request` object use
 
 When the form is submitted, `PUT /stores/polymer/57902ef29b880cd678a3d7a9` will actually be called.
 
+### Modifiers for GET and PUT requests
+
+In some cases, you might want the PUT request to use slightly different URLs:
+
+* `no-record-id-append`: when running the PUT request, it will not append the record ID. This is useful when the server alreayd knows the record ID based on the session (e.g. while fetching the user's record)
+
+* `put-suffix`: in some cases, the server might expect an extra path when putting data. It's rare, but it does happen. Whatever is in `put-suffix` will be added to the PUT URL. In the example above, setting `put-suffix` to '/extra` would turn the put into `PUT /stores/polymer/57902ef29b880cd678a3d7a9/extra`.
+
 ## Load of record with an AJAX call, pre-setting corresponding form values
 
 If `record-id` is set, the element will make a GET AJAX call to the `action` URL (in the example above, `GET /stores/polymer/57902ef29b880cd678a3d7a9` fetching the current record's value. It will also pre-set the form's value to
 match those returned by the server.
-Note: the response must be a JSON record, where each field's key corresponds to the element's `name` attribute. In the example above, a valid JSON in return would be:
+
+Record autoload will happen automatically when `record-id` is set; it can be turned off with the no-autoload attribute (in case values are already available from a cache, but you still want `hot-form` to _save_ them).
+
+**Note**: the response must be a JSON record, where each field's key corresponds to the element's `name` attribute. In the example above, a valid JSON in return would be:
 
     {
       "name":"Tony",
@@ -76,7 +89,7 @@ Note: the response must be a JSON record, where each field's key corresponds to 
 
 This means that you can create your form, _and_ know that the existing record's value are already set.
 
-Record autoload when `record-id` is set is on by default, and can be turned off with the no-record-id-autoload attribute.
+Just like `put-suffix`, you can define a `get-suffix` parameter which will be appended to GET (preload) requests.
 
 ## Reset form when response arrives, or set values based on returned values
 

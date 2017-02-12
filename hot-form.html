@@ -54,7 +54,7 @@ These events will bubble up. So, you can put elements that listen to them, and d
 
 ## Make the right request to the server (PUT or POST), based on `record-id`
 
-If `record-id` is set, the element will make sure that, the `request` object used by the `iron-ajax` form is manipulatd before sending it, so that the `action` attribute is changed to `/original/url/:recordId`, and the method used by `iron-ajax` is `PUT`. This means that the element can be used to make spefific PUT calls on specific records, based on `recordId`. For example:
+If `record-id` is set, the element will make sure that the `request` object used by the `iron-ajax` form is manipulatd before sending it, so that the `action` attribute is changed to `/original/url/:recordId` (with `:recordId` appended), and the method used by `iron-ajax` is `PUT`. This means that the element can be used to make spefific PUT calls on specific records, based on `recordId`. For example:
 
     <hot-form id="hot-form" record-id="57902ef29b880cd678a3d7a9">
       <form is="iron-form" id="iron-form" method="POST" action="/stores/polymer">
@@ -68,11 +68,22 @@ If `record-id` is set, the element will make sure that, the `request` object use
 
 When the form is submitted, `PUT /stores/polymer/57902ef29b880cd678a3d7a9` will actually be called.
 
+### Modifiers for GET and PUT requests
+
+In some cases, you might want the PUT request to use slightly different URLs:
+
+* `no-record-id-append`: when running the PUT request, it will not append the record ID. This is useful when the server alreayd knows the record ID based on the session (e.g. while fetching the user's record)
+
+* `put-suffix`: in some cases, the server might expect an extra path when putting data. It's rare, but it does happen. Whatever is in `put-suffix` will be added to the PUT URL. In the example above, setting `put-suffix` to '/extra` would turn the put into `PUT /stores/polymer/57902ef29b880cd678a3d7a9/extra`.
+
 ## Load of record with an AJAX call, pre-setting corresponding form values
 
 If `record-id` is set, the element will make a GET AJAX call to the `action` URL (in the example above, `GET /stores/polymer/57902ef29b880cd678a3d7a9` fetching the current record's value. It will also pre-set the form's value to
 match those returned by the server.
-Note: the response must be a JSON record, where each field's key corresponds to the element's `name` attribute. In the example above, a valid JSON in return would be:
+
+Record autoload will happen automatically when `record-id` is set; it can be turned off with the no-autoload attribute (in case values are already available from a cache, but you still want `hot-form` to _save_ them).
+
+**Note**: the response must be a JSON record, where each field's key corresponds to the element's `name` attribute. In the example above, a valid JSON in return would be:
 
     {
       "name":"Tony",
@@ -84,7 +95,7 @@ Note: the response must be a JSON record, where each field's key corresponds to 
 
 This means that you can create your form, _and_ know that the existing record's value are already set.
 
-Record autoload when `record-id` is set is on by default, and can be turned off with the no-record-id-autoload attribute.
+Just like `put-suffix`, you can define a `get-suffix` parameter which will be appended to GET (preload) requests.
 
 ## Reset form when response arrives, or set values based on returned values
 
@@ -143,7 +154,8 @@ If you don't want to submit the form with a button automatically, just avoid set
       properties: {
 
         /**
-         * The record ID, used to load data from server (if recordIdAutoload is set)
+         * The record ID, used to load data from server (if record-id is set and 
+         * no-autoload isn't set)
         */
         recordId: {
           type: String,
@@ -155,7 +167,7 @@ If you don't want to submit the form with a button automatically, just avoid set
          * By default, if `record-id` is set the form will make an AJAX GET call to the
          * action URL to fetch the current value. This will deactivate this feature
         */
-        noRecordIdAutoload: {
+        noAutoload: {
           type: Boolean,
           value: false
         },
@@ -196,7 +208,7 @@ If you don't want to submit the form with a button automatically, just avoid set
 
         /**
          * If set to `true`, this widget will _not_ add the recordId at the end of the submit
-         * URL when making a put. Use with care.
+         * URL when making a put or get. Use with care.
         */
         noRecordIdAppend: {
           type: Boolean,
@@ -234,6 +246,14 @@ If you don't want to submit the form with a button automatically, just avoid set
         putSuffix: {
           type: String,
         },
+
+        /**
+         * Suffix to be added to all GET requests (autoload)
+        */
+        getSuffix: {
+          type: String,
+        },
+
 
       },
 
@@ -357,8 +377,13 @@ If you don't want to submit the form with a button automatically, just avoid set
       */
       _loadData: function(){
         // Set the correct URL for the GET, as well as handleAs
-        if( this.recordId && ! this.noRecordIdAutoload ){
-          this.request.url = this.form.getAttribute('action') + "/" + this.recordId;
+        if( this.recordId && ! this.noAutoload ){
+          this.requestUrl = form.getAttribute('action') + ( this.noRecordIdAppend ? '' : ( "/" + this.recordId ) );
+
+          if( this.getSuffix ){
+            requestUrl = requestUrl + this.getSuffix;
+          }
+
           this.request.method="GET";
           this.request.handleAs = 'json';
 
