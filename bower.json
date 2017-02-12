@@ -2,6 +2,10 @@
   "name": "hot-form",
   "description": "Form decorator to make iron-forms really powerful.",
   "main": "hot-form.html",
+  "keywords": [
+    "web-components",
+    "forms"
+  ],
   "dependencies": {
     "polymer": "Polymer/polymer#^1.6.0",
     "iron-a11y-keys": "^1.0.6",
