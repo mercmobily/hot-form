@@ -1,7 +1,7 @@
 <link rel="import" href="../polymer/polymer.html">
+<link rel="import" href="../polymer/lib/utils/flattened-nodes-observer.html">
 <link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
-<link rel="import" href="../hot-deep-target-behavior/hot-deep-target-behavior.html">
 
 <!--
 
@@ -18,7 +18,7 @@ Ask yourself these questions:
 * Do you want to highlight the problem fields if the form is NOT a success?
 * Do you want to submit the form when the user presses ENTER on a paper-input widget?
 * Do you want to refresh the data with the saved info coming back from the server after saving?
-* Do you want to make it possible for other widgets to display messages to the user?
+* Do you want to display messages to the user?
 
 If the answer is yes, and you are coding this each time from scratch, then maybe you should consider using a decorator element that does _all_ of this for you. **Welcome to `hot-form`**.
 
@@ -146,450 +146,460 @@ If you don't want to submit the form with a button automatically, just avoid set
     <iron-a11y-keys id="a11y" keys="enter" on-keys-pressed="_a11ySubmit"></iron-a11y-keys>
 
     <!-- The actual content distributed, from the light DOM -->
-    <content id="contentNode"></content>
+    <slot></slot>
 
   </template>
 
   <script>
-    Polymer({
+/* global Polymer, customElements, CustomEvent */
+class HotForm extends Polymer.Element {
+  static get is () { return 'hot-form' }
 
-      is: 'hot-form',
-
-      properties: {
-
-        /**
-         * The record ID, used to load data from server (if record-id is set and
-         * no-autoload isn't set)
-        */
-        recordId: {
-          type: String,
-          notify: true,
-        },
-
-
-        /**
-         * By default, if `record-id` is set the form will make an AJAX GET call to the
-         * action URL to fetch the current value. This will deactivate this feature
-        */
-        noAutoload: {
-          type: Boolean,
-          value: false
-        },
-
-        /**
-         * Action once the response to a POST received. It can be `reset` (the form is reset),
-         * `set` (the form is set with the returned data) or nothing
-         *
-        */
-        actionAfterPostResponse: {
-          type: String,
-          value: 'reset'
-        },
-
-        /**
-         * Action once the response to a PUT received. It can be `reset` (the form is reset),
-         * `set` (the form is set with the returned data) or nothing
-        */
-        actionAfterPutResponse: {
-          type: String,
-          value: 'set'
-        },
-
-        /**
-         * The iron-ajax widget used to load data. It's the same interface as
-         * iron-form (which also exposes a `request` element)
-        */
-        request: {
-          type: Object
-        },
-
-        /**
-         * If set to `true`, pressing ENTER in a paper-input field will submit.
-         * ALSO when a paper-button in the form marked as "type=submit" is pressed,
-         * the form will get submitted
-        */
-        noEnterSubmit: Boolean,
-
-        /**
-         * If set to `true`, this widget will _not_ add the recordId at the end of the submit
-         * URL when making a put or get. Use with care.
-        */
-        noRecordIdAppend: {
-          type: Boolean,
-          default: false
-        },
-
-        /**
-         * Message given in case of success. Defaults to "Success!"
-        */
-        successMessage: {
-          type: String,
-          value: "Success!"
-        },
-
-        /**
-         * Submit message given when submit happens. Defaults as "Saving..."
-        */
-        submitMessage: {
-          type: String,
-          value: "Saving..."
-        },
-
-        /**
-         * Message given in case of error AND no error message is
-         * returned by the AJAX call (e.g. timeouts, etc.)
-        */
-        defaultErrorMessage: {
-          type: String,
-          value: "Error!"
-        },
-
-        /**
-         * Suffix to be added to all PUT requests
-        */
-        putSuffix: {
-          type: String,
-        },
-
-        /**
-         * Suffix to be added to all GET requests (autoload)
-        */
-        getSuffix: {
-          type: String,
-        },
-
-
+  static get properties () {
+    return {
+      /**
+       * The record ID, used to load data from server (if record-id is set and
+       * no-autoload isn't set)
+      */
+      recordId: {
+        type: String,
+        notify: true
       },
 
-      observers: [
-        '_changedRecordId(recordId)'
-      ],
-
-
-      attached: function(){
-        this.listen( this.form, 'iron-form-presubmit', '_prepareToSubmit');
-        this._wirePaperButtonToSubmit();
-
-        this.listen( this.form, 'iron-form-submit', '_formSubmit' );
-        this.listen( this.form, 'iron-form-response', '_formResponse' );
-        this.listen( this.form, 'iron-form-error', '_formError' );
-
+      /**
+       * By default, if `record-id` is set the form will make an AJAX GET call to the
+       * action URL to fetch the current value. This will deactivate this feature
+      */
+      noAutoload: {
+        type: Boolean,
+        value: false
       },
 
-      detached: function(){
-        this.unlisten( this.form, 'iron-form-presubmit', '_prepareToSubmit');
-        this._unwirePaperButtonToSubmit();
-
-        this.unlisten( this.form, 'iron-form-submit', '_formSubmit' );
-        this.unlisten( this.form, 'iron-form-response', '_formResponse' );
-        this.unlisten( this.form, 'iron-form-error', '_formError' );
+      /**
+       * Action once the response to a POST received. It can be `reset` (the form is reset),
+       * `set` (the form is set with the returned data) or nothing
+       *
+      */
+      actionAfterPostResponse: {
+        type: String,
+        value: 'reset'
       },
 
-
-      ready: function(){
-
-        // Sets the 'request' attribute
-        this.request = this.$.request;
-
-        // Sets the form
-        this.form = this.queryEffectiveChildrenDeep( 'form' );
-
-        // Sets the form's button, looking into the form
-        this.submitButtons = this.queryAllEffectiveChildrenDeep( 'paper-button[type=submit]' );
-
-        // Load data (if so required) into the form, depending on recordId
-        this._loadData();
-
-        // Sets the a11y target as the form in the light DOM
-        // It wasn't done declaratively because the form is in the light DOM
-        this.$.a11y.target=this.form;
-
+      /**
+       * Action once the response to a PUT received. It can be `reset` (the form is reset),
+       * `set` (the form is set with the returned data) or nothing
+      */
+      actionAfterPutResponse: {
+        type: String,
+        value: 'set'
       },
 
-      // **********************************************************
-      // SANE SUBMIT
-      // The part of the widget that allows submission on enter on a
-      // paper-input widget, and automatic submit when the "type=submit"
-      // button is pressed
-      // **********************************************************
-
-      _wirePaperButtonToSubmit: function(){
-
-        if( this.submitButtons.length ){
-          this.submitButtons.forEach( ( b ) => {
-            this.listen( b, 'tap', '_onPaperButtonTap');
-          })
-        };
+      /**
+       * The iron-ajax widget used to load data. It's the same interface as
+       * iron-form (which also exposes a `request` element)
+      */
+      request: {
+        type: Object
       },
 
-      _unwirePaperButtonToSubmit: function(){
-        if( this.submitButtons.length ){
-          this.submitButtons.forEach( ( b ) => {
-            this.unlisten( b, 'tap', '_onPaperButtonTap');
-          });
-        };
+      /**
+       * If set to `true`, pressing ENTER in a paper-input field will submit.
+       * ALSO when a paper-button in the form marked as "type=submit" is pressed,
+       * the form will get submitted
+      */
+      noEnterSubmit: Boolean,
+
+      /**
+       * If set to `true`, this widget will _not_ add the recordId at the end of the submit
+       * URL when making a put or get. Use with care.
+      */
+      noRecordIdAppend: {
+        type: Boolean,
+        default: false
       },
 
+      /**
+       * Message given in case of success. Defaults to "Success!"
+      */
+      successMessage: {
+        type: String,
+        value: 'Success!'
+      },
 
-      _a11ySubmit: function( e ){
+      /**
+       * Submit message given when submit happens. Defaults as "Saving..."
+      */
+      submitMessage: {
+        type: String,
+        value: 'Saving...'
+      },
 
-        var ke = Polymer.dom( e.detail.keyboardEvent );
+      /**
+       * Message given in case of error AND no error message is
+       * returned by the AJAX call (e.g. timeouts, etc.)
+      */
+      defaultErrorMessage: {
+        type: String,
+        value: 'Error!'
+      },
 
-        // Only trigger submission if noEnterSubmit is not
-        // (I know, double negatives right?)
-        if( ! this.noEnterSubmit ){
+      /**
+       * Suffix to be added to all PUT requests
+      */
+      putSuffix: {
+        type: String
+      },
 
-          // Only trigger submission for paper-input widgets
-          if( ke.localTarget.tagName === 'PAPER-INPUT') {
-            this._maybeSubmit();
+      /**
+       * Suffix to be added to all GET requests (autoload)
+      */
+      getSuffix: {
+        type: String
+      }
+
+    }
+  }
+
+  static get observers () {
+    return [
+      '_changedRecordId(recordId)'
+    ]
+  }
+
+  allChildrenNamed (tagName, firstOnly, doNotVisitTagName) {
+    var list = []
+    var quitVisit = false
+    function visit (node) {
+      if (quitVisit) return
+      var c$ = Polymer.FlattenedNodesObserver.getFlattenedNodes(node)
+      for (var i = 0, l = c$.length, c; (i < l), (c = c$[ i ]); i++) { // eslint-disable-line
+        if (c.tagName === tagName) {
+          list.push(c)
+          // If only the first one is to be found,
+          if (firstOnly) {
+            quitVisit = 1
+            return
           }
-
         }
-      },
+        // Visit element's children, unless it matches doNotvisitSelector
+        if (c.tagName !== doNotVisitTagName) visit(c)
+      }
+    }
+    visit(this)
+    return firstOnly ? list[ 0 ] : list
+  }
 
-      // Submit the form when the right button is tapped
-      _onPaperButtonTap: function(){
-        this._maybeSubmit();
-      },
+  connectedCallback () {
+    super.connectedCallback()
 
-      _maybeSubmit: function(){
+    this.addEventListener('iron-form-presubmit', this._prepareToSubmit)
+    this._wirePaperButtonToSubmit()
+    this.addEventListener('iron-form-submit', this._formSubmit)
+    this.addEventListener('iron-form-response', this._formResponse)
+    this.addEventListener('iron-form-error', this._formError)
+  }
 
-        // Don't re-submit if loading
-        if( this.form.request.loading ) return;
+  disconnectedCallback () {
+    super.disconnectedCallback()
 
-        // Actually submit the firm
-        this.form.submit();
-      },
+    this.removeEventListener('iron-form-presubmit', this._prepareToSubmit)
+    this._unwirePaperButtonToSubmit()
+    this.removeEventListener('iron-form-submit', this._formSubmit)
+    this.removeEventListener('iron-form-response', this._formResponse)
+    this.removeEventListener('iron-form-error', this._formError)
+  }
 
-      // **********************************************************
-      // RECORD LOADING
-      // The part of the widget that makes sure values are loaded
-      // **********************************************************
+  ready () {
+    super.ready()
+    var self = this
 
-      /**
-       * If recordId changes, then new values will need to be loaded
-      */
-      _changedRecordId: function( recordId ){
-        if( this.form && this.form._readied ){
-          this._loadData();
+    // Sets the 'request' attribute
+    this.request = this.$.request
+
+    this.ironForm = this.allChildrenNamed('IRON-FORM', true)
+    if (!this.ironForm) throw new Error('hot-form must contain an iron-form element which will be decorated')
+
+    // Sets the form's button, looking into the form
+    this.submitButtons = this.allChildrenNamed('PAPER-BUTTON').filter(el => el.getAttribute('type') === 'submit')
+
+    // Load data (if so required) into the form, depending on recordId
+    this._loadData()
+
+    // Sets the a11y target as the form in the light DOM
+    // It wasn't done declaratively because the form is in the light DOM
+    setTimeout(function () {
+      self.form = self.ironForm._form
+      self.$.a11y.target = self.form
+    }, 0)
+  }
+
+  // **********************************************************
+  // SANE SUBMIT
+  // The part of the widget that allows submission on enter on a
+  // paper-input widget, and automatic submit when the "type=submit"
+  // button is pressed
+  // **********************************************************
+
+  _wirePaperButtonToSubmit () {
+    if (this.submitButtons.length) {
+      this.submitButtons.forEach((b) => {
+        b.addEventListener('tap', this._onPaperButtonTap.bind(this))
+      })
+    };
+  }
+
+  _unwirePaperButtonToSubmit () {
+    if (this.submitButtons.length) {
+      this.submitButtons.forEach((b) => {
+        b.removeEventListener('tap', this._onPaperButtonTap.bind(this))
+      })
+    };
+  }
+
+  _a11ySubmit (e) {
+    var ke = Polymer.dom(e.detail.keyboardEvent)
+
+    // Only trigger submission if noEnterSubmit is not
+    // (I know, double negatives right?)
+    if (!this.noEnterSubmit) {
+      // Only trigger submission for paper-input widgets
+      if (ke.localTarget.tagName === 'PAPER-INPUT') {
+        this._maybeSubmit()
+      }
+    }
+  }
+
+  // Submit the form when the right button is tapped
+  _onPaperButtonTap () {
+    this._maybeSubmit()
+  }
+
+  _maybeSubmit () {
+    // Don't re-submit if loading
+    if (this.ironForm.request && this.ironForm.request.loading) return
+
+    // debugger
+    // Actually submit the firm
+    this.ironForm.submit()
+  }
+
+  // **********************************************************
+  // RECORD LOADING
+  // The part of the widget that makes sure values are loaded
+  // **********************************************************
+
+  /**
+   * If recordId changes, then new values will need to be loaded
+  */
+  _changedRecordId (recordId) {
+    if (this.ironForm) {
+      this._loadData()
+    }
+  }
+
+  /**
+   * Prepare the `this.request` widget with the right URL (which depends on recordId)
+   * and generates the request.
+  */
+  _loadData () {
+    // Set the correct URL for the GET, as well as handleAs
+    if (this.recordId && !this.noAutoload) {
+      this.requestUrl = this.form.getAttribute('action') + (this.noRecordIdAppend ? '' : ('/' + this.recordId))
+
+      if (this.getSuffix) {
+        this.requestUrl = this.requestUrl + this.getSuffix
+      }
+
+      this.request.method = 'GET'
+      this.request.handleAs = 'json'
+
+      // This will generate the request, which -- as indicated in the
+      // request's declarative definition -- will cause either `_dataLoaderResponse`
+      // or `_dataLoaderError` to be called.
+
+      // This is async to give decorating widgets a chance to listen to events
+      // before firing
+      this.async(function () {
+        this.request.generateRequest()
+      })
+    }
+  }
+
+  /**
+   * The request by `this.request` worked: pre-fill the form's information
+   * with whatever came back.
+  */
+  _dataLoaderResponse () {
+    this._setFieldsAsObject(this.request.lastResponse)
+  }
+
+  /**
+   * The request by `this.request` didn't work.
+  */
+  _dataLoaderError () {
+    // console.log("RESPONDED WITH ERROR!");
+  }
+
+  _fireEventSubmit (msg, e) {
+    if (msg) {
+      this.dispatchEvent(new CustomEvent('user-message-info', { detail: { message: msg }, bubbles: true }))
+    }
+  }
+
+  _fireEventResponse (msg, e) {
+    if (msg) {
+      this.dispatchEvent(new CustomEvent('user-message-success', { detail: { message: msg }, bubbles: true }))
+    }
+  }
+
+  _fireEventError (msg, e) {
+    if (msg) {
+      this.dispatchEvent(new CustomEvent('user-message-error', { detail: { message: msg }, bubbles: true }))
+    }
+  }
+
+  // **********************************************************
+  // FUNCTIONS RE: SUBMITTING FORMS AND GETTING response
+  // Everything needed for form submission (preparation, etc.)
+  // **********************************************************
+
+  /**
+   * Set the right URL in the form's `request` widget (which will
+   * actually make the request)
+  */
+  _prepareToSubmit (e) {
+    var ironForm = this.ironForm
+    var form = this.form
+
+    var request = ironForm.request
+
+    // If it's a PUT, then the actual URL for the request needs to include
+    // the ID (if present)
+    // if( form.getAttribute( 'method' ).toUpperCase() === 'PUT' ){
+
+    // request.body = this.form.serialize();
+    // request.params = {};
+
+    // Set the correct URL for the PUT
+    if (this.recordId) {
+      var requestUrl = form.getAttribute('action') + (this.noRecordIdAppend ? '' : ('/' + this.recordId))
+      if (this.putSuffix) {
+        requestUrl = requestUrl + this.putSuffix
+      }
+      request.url = requestUrl
+      request.method = 'PUT'
+    } else {
+      request.url = form.getAttribute('action')
+    }
+  }
+
+  /**
+   * Set the right error messages in the corresponding fields
+  */
+  _setErrorsInFields (returnObject) {
+    if (this.ironForm && returnObject && typeof returnObject === 'object' && Array.isArray(returnObject.errors)) {
+      for (var i = 0, l = returnObject.errors.length; i < l; i++) {
+        var error = returnObject.errors[ i ]
+        var domField = this.ironForm._getSubmittableElements().find(el => el.name === error.field)
+        if (!domField || domField.type === 'hidden') domField = this.ironForm._getSubmittableElements().find(el => el.vname === error.field)
+        if (domField) {
+          domField.errorMessage = error.message
+          domField.invalid = true
         }
-      },
+      };
+    }
+  }
 
-      /**
-       * Prepare the `this.request` widget with the right URL (which depends on recordId)
-       * and generates the request.
-      */
-      _loadData: function(){
-        // Set the correct URL for the GET, as well as handleAs
-        if( this.recordId && ! this.noAutoload ){
-          this.requestUrl = form.getAttribute('action') + ( this.noRecordIdAppend ? '' : ( "/" + this.recordId ) );
+  _formSubmit (e) {
+    // Make submit button busy, now that submission is actually underway
+    if (this.submitButtons.length) {
+      this.submitButtons.forEach((b) => {
+        b.disabled = true
+      })
+    }
+    this.form.disabled = true
 
-          if( this.getSuffix ){
-            requestUrl = requestUrl + this.getSuffix;
-          }
+    // Give a submit message
+    if (this.submitMessage !== '') {
+      this._fireEventSubmit(this.submitMessage, e)
+    }
+  }
 
-          this.request.method="GET";
-          this.request.handleAs = 'json';
+  _formError (e) {
+    var returnObject = e.detail.request.xhr.response
+    if (returnObject && typeof returnObject === 'object') {
+      this._fireEventError(returnObject.message, e)
+    } else {
+      this._fireEventError(this.defaultErrorMessage, e)
+    }
+    this._setErrorsInFields(returnObject)
 
-          // This will generate the request, which -- as indicated in the
-          // request's declarative definition -- will cause either `_dataLoaderResponse`
-          // or `_dataLoaderError` to be called.
+    if (this.submitButtons.length) {
+      this.submitButtons.forEach((b) => {
+        b.disabled = false
+      })
+    }
 
-          // This is async to give decorating widgets a chance to listen to events
-          // before firing
-          this.async( function(){
-            this.request.generateRequest();
-          })
-        }
-      },
+    this.form.disabled = false
 
-      /**
-       * The request by `this.request` worked: pre-fill the form's information
-       * with whatever came back.
-      */
-      _dataLoaderResponse: function(){
-        this._setFieldsAsObject( this.request.lastResponse );
-      },
+    // this._setOrResetForm( e );
+  }
 
-      /**
-       * The request by `this.request` didn't work.
-      */
-      _dataLoaderError: function(){
-        //console.log("RESPONDED WITH ERROR!");
-      },
+  _formResponse (e) {
+    if (this.successMessage !== '') {
+      this._fireEventResponse(this.successMessage, e)
+    }
 
-      _fireEventSubmit: function( msg, e ){
-        if( msg ) {
-          this.fire( 'user-message-info', { message: msg, originalEvent: e } );
-        }
-      },
+    if (this.submitButtons.length) {
+      this.submitButtons.forEach((b) => {
+        b.disabled = false
+      })
+    }
 
-      _fireEventResponse: function( msg, e ){
-        if( msg ){
-          this.fire( 'user-message-success', { message: msg, originalEvent: e } );
-        }
-      },
+    this.form.disabled = false
+    this._setOrResetForm(e)
+  }
 
-      _fireEventError: function( msg, e ){
-        if( msg ){
-          this.fire( 'user-message-error', { message: msg, originalEvent: e } );
-        }
-      },
+  _setOrResetForm (e) {
+    var propToCheck
+    if (this.recordId) {
+      propToCheck = 'actionAfterPutResponse'
+    } else {
+      propToCheck = 'actionAfterPostResponse'
+    }
 
-      // **********************************************************
-      // FUNCTIONS RE: SUBMITTING FORMS AND GETTING response
-      // Everything needed for form submission (preparation, etc.)
-      // **********************************************************
+    // Either
+    // * reset the form (default for POST)
+    // * set fields depending on what came back (default for PUT)
+    if (this[ propToCheck ] === 'reset') {
+      this.form.reset()
+    } else if (this[ propToCheck ] === 'set') {
+      this._setFieldsAsObject(e.detail.response)
+    }
+  }
 
-      /**
-       * Set the right URL in the form's `request` widget (which will
-       * actually make the request)
-      */
-      _prepareToSubmit: function( e ){
+  // **********************************************************
+  // UTILITY FUNCTIONS
+  // **********************************************************
+  _setFieldsAsObject (r) {
+    if (typeof r === 'object' && r !== null) {
+      for (var k in r) {
+        var domField = this.ironForm.$$("[name='" + k + "']")
 
-        var form = this.form;
-        var request = form.request;
-
-        // If it's a PUT, then the actual URL for the request needs to include
-        // the ID (if present)
-        //if( form.getAttribute( 'method' ).toUpperCase() === 'PUT' ){
-
-        //request.body = this.form.serialize();
-        //request.params = {};
-
-        // Set the correct URL for the PUT
-        if( this.recordId ){
-          var requestUrl = form.getAttribute('action') + ( this.noRecordIdAppend ? '' : ( "/" + this.recordId ) );
-          if( this.putSuffix ){
-            requestUrl = requestUrl + this.putSuffix;
-          }
-          request.url = requestUrl;
-          request.method = "PUT";
-        } else {
-          request.url = form.getAttribute('action');
-        }
-
-      },
-
-      /**
-       * Set the right error messages in the corresponding fields
-      */
-      _setErrorsInFields: function( returnObject ){
-        var found;
-        var form = this.form;
-        if( form && returnObject && typeof returnObject === 'object' && Array.isArray( returnObject.errors ) ){
-
-          for( var i = 0, l = returnObject.errors.length; i < l; i ++ ){
-            var error = returnObject.errors[ i ];
-
-            var domField = this.form.$$("[name='" + error.field + "']")
-            if(! domField || domField.type == 'hidden' ) domField = this.form.$$("[vname='" + error.field + "']")
-
-            if( domField ){
-              domField.errorMessage = error.message;
-              domField.invalid = true;
+        if (domField) {
+          if (this.ironForm._usesCheckedInsteadOfValue(domField)) {
+            if (typeof r[k] !== 'undefined') {
+              domField.checked = r[ k ]
             }
-          };
+          } else {
+            if (typeof r[k] !== 'undefined') domField.value = r[ k ]
+          }
         }
-      },
+      };
+    }
+  }
+}
+customElements.define(HotForm.is, HotForm)
 
-      _formSubmit: function( e ){
-
-        // Make submit button busy, now that submission is actually underway
-        if( this.submitButtons.length ){
-
-          this.submitButtons.forEach( ( b ) => {
-            b.disabled = true;
-          });
-
-        }
-        this.form.disabled = true;
-
-        // Give a submit message
-        if( this.submitMessage != '' ){
-          this._fireEventSubmit( this.submitMessage, e );
-        }
-      },
-
-      _formError: function( e ){
-        var returnObject = e.detail.request.xhr.response;
-        if( returnObject && typeof returnObject === 'object' ){
-          this._fireEventError( returnObject.message, e );
-        } else {
-          this._fireEventError( this.defaultErrorMessage, e );
-        }
-        this._setErrorsInFields( returnObject );
-
-        if( this.submitButtons.length ){
-          this.submitButtons.forEach( ( b ) => {
-            b.disabled = false;
-          });
-        }
-
-        this.form.disabled = false;
-
-        //this._setOrResetForm( e );
-      },
-
-      _formResponse: function( e ){
-        if( this.successMessage != '' ){
-          this._fireEventResponse( this.successMessage, e );
-        }
-
-        if( this.submitButtons.length ){
-          this.submitButtons.forEach( ( b ) => {
-            b.disabled = false;
-          });
-        }
-
-        this.form.disabled = false;
-        this._setOrResetForm( e );
-      },
-
-      _setOrResetForm: function( e ){
-
-        var propToCheck;
-        if( this.recordId ){
-          propToCheck = 'actionAfterPutResponse';
-        } else {
-          propToCheck = 'actionAfterPostResponse';
-        }
-
-        // Either
-        // * reset the form (default for POST)
-        // * set fields depending on what came back (default for PUT)
-        if( this[ propToCheck ] === 'reset' ){
-          this.form.reset();
-        } else if( this[ propToCheck ] === 'set' ){
-          this._setFieldsAsObject( e.detail.response );
-        }
-
-      },
-
-      // **********************************************************
-      // UTILITY FUNCTIONS
-      // **********************************************************
-      _setFieldsAsObject: function( r ){
-        if( typeof r === 'object' && r !== null ){
-
-          for( var k in r ){
-            var domField = this.form.$$("[name='" + k + "']")
-
-            if( domField ){
-
-              if (this.form._usesCheckedInsteadOfValue( domField ) ){
-                if( typeof r[k] !== 'undefined' ){
-                  domField.checked  = r[ k ];
-                  valueProperty = 'checked';
-                }
-              } else {
-                if( typeof r[k] !== 'undefined' ) domField.value = r[ k ]
-              }
-            }
-          };
-        }
-      },
-
-    });
   </script>
 </dom-module>
