@@ -1,0 +1,206 @@
+<!doctype html>
+<html>
+  <head>
+    <title>hot-form demo</title>
+
+    <script>
+      //window.Polymer = { lazyRegister: false, dom: 'shadow', useNativeCSSProperties: true };
+    </script>
+
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1, user-scalable=yes">
+    <script src="../../webcomponentsjs/webcomponents-lite.js"></script>
+
+    <link rel="import" href="../../iron-demo-helpers/demo-pages-shared-styles.html">
+    <link rel="import" href="../../iron-demo-helpers/demo-snippet.html">
+
+    <link rel="import" href="../hot-form.html">
+
+    <!-- devDependencies -->
+    <link rel="import" href="../../iron-form/iron-form.html">
+    <link rel="import" href="../../paper-input/paper-input.html">
+    <link rel="import" href="../../paper-toast/paper-toast.html">
+    <link rel="import" href="../../paper-button/paper-button.html">
+    <link rel="import" href="../../iron-ajax/iron-ajax.html">
+    <link rel="import" href="../../hot-user-message-toasts/hot-user-message-toasts.html">
+    <script src="../../sinonjs/sinon.js"></script>
+
+    <style is="custom-style" include="demo-pages-shared-styles">
+
+    </style>
+  </head>
+  <body>
+
+
+    <script>
+      //sinon.log = function( m ){console.log("Message:", m)};
+      //var server = sinon.useFakeXMLHttpRequest()
+      server = sinon.fakeServerWithClock.create();
+      //server.autoRespond = true;
+      server.respondImmediately = true;
+
+      server.respondWith(
+        'POST',
+        'submit_validating', [
+          200,
+          'application/json',
+          '{"name":"nameField","surname":"surnameField"}'
+        ]
+      );
+
+      server.respondWith(
+        'POST',
+        'submit_not_validating', [
+          422,
+          'application/json',
+          '{"message":"Unprocessable Entity","errors":[{"field":"maker","message":"Maker is not acceptable"}]}'
+        ]
+      );
+
+      server.respondWith(
+        'GET',
+        '/car/car1', [
+          200,
+          'application/json',
+          '{"maker":"Holden","model":"Commodore"}'
+        ]
+      );
+
+      server.respondWith(
+        'POST',
+        '/car', function( request ){
+          var maker = request.requestBody.split('&')[0].split('=')[1].toUpperCase();
+          var model = request.requestBody.split('&')[1].split('=')[1].toUpperCase();
+          request.respond(
+            200,
+            'application/json',
+            '{"maker":"'+maker+'","model":"'+model+'"}'
+          );
+        }
+      );
+
+      server.respondWith(
+        'PUT',
+        '/car/car1', function( request ){
+          var maker = request.requestBody.split('&')[0].split('=')[1].toUpperCase();
+          var model = request.requestBody.split('&')[1].split('=')[1].toUpperCase();
+          request.respond(
+            200,
+            'application/json',
+            '{"maker":"'+maker+'","model":"'+model+'"}'
+          );
+        }
+
+      );
+    </script>
+
+    <hot-user-message-toasts>
+
+      <h1>Global toasts</h1>
+
+      <div class="vertical-section-container centered">
+        <h3>Basic hot-form, passing validation.</h3>
+        <p>This form will emit a <code>user-message-info</code> and <code>user-message-response</code>
+          events, which will be picked up by <code>&lt;hot-user-message-toast></code> which will display the messages.</p>
+        <demo-snippet>
+          <template>
+
+            <hot-form>
+              <form is="iron-form" method="POST" action="submit_validating">
+                <paper-input name="maker" id="maker" ></paper-input>
+                <paper-input name="model" id="model"></paper-input>
+                <paper-button type="submit" raised>Submit!</paper-button>
+              </form>
+            </hot-form>
+
+          </template>
+        </demo-snippet>
+      </div>
+
+      <div class="vertical-section-container centered">
+        <h3>Basic hot-form, failing</h3>
+        <p>This form will emit a <code>user-message-error</code>
+          which will be picked up by <code>&lt;hot-user-message-toast></code> which will display the messages.</p>
+        <demo-snippet>
+          <template>
+
+            <hot-form>
+              <form id="form" is="iron-form" method="POST" action="submit_not_validating">
+                <paper-input name="maker" id="maker" ></paper-input>
+                <paper-input name="model" id="model"></paper-input>
+                <paper-button type="submit" raised>Submit!</paper-button>
+              </form>
+            </hot-form>
+
+          </template>
+        </demo-snippet>
+      </div>
+
+      <div class="vertical-section-container centered">
+        <h3>hot-form pre-loading elements</h3>
+        <p>hot-form will run a GET on the <code>action</code> URL, appending the <code>record-id</code>, to pre-fill the form</p>
+        <p>Since <code>record-id</code> is set, it will run a PUT request on <code>/car/car1</code> (that is, the form's action
+          plus the record ID)</p>
+        <p>ALSO, when the server responds, it will fill the fields with whatever the server responded to (in this case
+            the input, but capitalized)</p>
+
+        <demo-snippet>
+          <template>
+
+            <hot-form record-id="car1">
+              <form id="form" is="iron-form" method="POST" action="/car">
+                <paper-input name="maker" id="maker" ></paper-input>
+                <paper-input name="model" id="model"></paper-input>
+                <paper-button type="submit" raised>Submit!</paper-button>
+              </form>
+            </hot-form>
+
+          </template>
+        </demo-snippet>
+      </div>
+
+
+      <div class="vertical-section-container centered">
+        <h3>hot-form NOT pre-loading elements (using <code>no-autoload</code>)</h3>
+        <p>Since <code>record-id</code> is set, it will still make a PUT request</p>
+
+        <demo-snippet>
+          <template>
+
+            <hot-form record-id="car1" no-autoload>
+              <form id="form" is="iron-form" method="POST" action="/car">
+                <paper-input name="maker" id="maker" ></paper-input>
+                <paper-input name="model" id="model"></paper-input>
+                <paper-button type="submit" raised>Submit!</paper-button>
+              </form>
+            </hot-form>
+
+          </template>
+        </demo-snippet>
+      </div>
+
+
+      <div class="vertical-section-container centered">
+        <h3>hot-form doing POST rather than PUT (no record-id)</h3>
+        <p>Since there is no <code>record-id</code> set, the form will do a POST request without record ID.</p>
+        <p>The `action-after-post-response` attribute is set to `reset`. So Since there is no <code>record-id</code> set, the form will do a POST request without record ID.</p>
+        <demo-snippet>
+          <template>
+
+            <hot-form action-after-post-response="reset">
+              <form id="form" is="iron-form" method="POST" action="/car">
+                <paper-input name="maker" id="maker" ></paper-input>
+                <paper-input name="model" id="model"></paper-input>
+                <paper-button type="submit" raised>Submit!</paper-button>
+              </form>
+            </hot-form>
+
+          </template>
+        </demo-snippet>
+      </div>
+
+
+
+    </hot-user-message-toasts>
+  </body>
+</html>
