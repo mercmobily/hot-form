@@ -15,6 +15,7 @@ Ask yourself these questions:
 
 * Do you need to load data from the server before showing the form?
 * Do you want to overwrite a record (PUT with an existing ID), or create a new one (POST, no ID) or create a record with an arbitrary ID (PUT with a new ID)? Do you realise that you will need POST or PUT calls?
+* Do you want to render ALL input fields _automatically_ disabled while the form is being submitted?
 * Do you want to highlight the problem fields if the form is NOT a success?
 * Do you want to submit the form when the user presses ENTER on a paper-input widget?
 * Do you want to refresh the data with the saved info coming back from the server after saving?
@@ -227,7 +228,7 @@ class HotForm extends Polymer.Element {
       },
 
       /**
-       * Submit message given when submit happens. Defaults as "Saving..."
+       * Submit message given wh7en submit happens. Defaults as "Saving..."
       */
       submitMessage: {
         type: String,
@@ -266,14 +267,14 @@ class HotForm extends Polymer.Element {
     ]
   }
 
-  allChildrenNamed (tagName, firstOnly, doNotVisitTagName) {
+  allChildrenNamed (node, tagName, firstOnly, doNotVisitTagName) {
     var list = []
     var quitVisit = false
     function visit (node) {
       if (quitVisit) return
       var c$ = Polymer.FlattenedNodesObserver.getFlattenedNodes(node)
       for (var i = 0, l = c$.length, c; (i < l), (c = c$[ i ]); i++) { // eslint-disable-line
-        if (c.tagName === tagName) {
+        if (c.tagName === tagName || c.name === tagName) {
           list.push(c)
           // If only the first one is to be found,
           if (firstOnly) {
@@ -282,16 +283,30 @@ class HotForm extends Polymer.Element {
           }
         }
         // Visit element's children, unless it matches doNotvisitSelector
-        if (c.tagName !== doNotVisitTagName) visit(c)
+        if ((doNotVisitTagName === null || typeof doNotVisitTagName === 'undefined') || c.tagName !== doNotVisitTagName) {
+          visit(c)
+        }
       }
     }
-    visit(this)
+    visit(node)
     return firstOnly ? list[ 0 ] : list
+  }
+
+  allSubmittableElements () {
+    var list = []
+    function visit (node) {
+      var c$ = Polymer.FlattenedNodesObserver.getFlattenedNodes(node)
+      for (var i = 0, l = c$.length, c; (i < l), (c = c$[ i ]); i++) { // eslint-disable-line
+        if (c.name || typeof c.valudate === 'function') list.push(c)
+        visit(c)
+      }
+    }
+    visit(this.form)
+    return list
   }
 
   connectedCallback () {
     super.connectedCallback()
-
     this.addEventListener('iron-form-presubmit', this._prepareToSubmit)
     this._wirePaperButtonToSubmit()
     this.addEventListener('iron-form-submit', this._formSubmit)
@@ -301,7 +316,6 @@ class HotForm extends Polymer.Element {
 
   disconnectedCallback () {
     super.disconnectedCallback()
-
     this.removeEventListener('iron-form-presubmit', this._prepareToSubmit)
     this._unwirePaperButtonToSubmit()
     this.removeEventListener('iron-form-submit', this._formSubmit)
@@ -316,20 +330,20 @@ class HotForm extends Polymer.Element {
     // Sets the 'request' attribute
     this.request = this.$.request
 
-    this.ironForm = this.allChildrenNamed('IRON-FORM', true)
+    this.ironForm = this.allChildrenNamed(this, 'IRON-FORM', true)
     if (!this.ironForm) throw new Error('hot-form must contain an iron-form element which will be decorated')
 
     // Sets the form's button, looking into the form
-    this.submitButtons = this.allChildrenNamed('PAPER-BUTTON').filter(el => el.getAttribute('type') === 'submit')
+    this.submitButtons = this.allChildrenNamed(this, 'PAPER-BUTTON').filter(el => el.getAttribute('type') === 'submit')
 
     // Load data (if so required) into the form, depending on recordId
-    this._loadData()
 
     // Sets the a11y target as the form in the light DOM
     // It wasn't done declaratively because the form is in the light DOM
     setTimeout(function () {
       self.form = self.ironForm._form
       self.$.a11y.target = self.form
+      self._loadData()
     }, 0)
   }
 
@@ -378,8 +392,7 @@ class HotForm extends Polymer.Element {
     // Don't re-submit if loading
     if (this.ironForm.request && this.ironForm.request.loading) return
 
-    // debugger
-    // Actually submit the firm
+    // Actually submit the form
     this.ironForm.submit()
   }
 
@@ -412,6 +425,7 @@ class HotForm extends Polymer.Element {
 
       this.request.method = 'GET'
       this.request.handleAs = 'json'
+      this.request.url = this.requestUrl
 
       // This will generate the request, which -- as indicated in the
       // request's declarative definition -- will cause either `_dataLoaderResponse`
@@ -419,9 +433,10 @@ class HotForm extends Polymer.Element {
 
       // This is async to give decorating widgets a chance to listen to events
       // before firing
-      this.async(function () {
+
+      setTimeout(function () {
         this.request.generateRequest()
-      })
+      }.bind(this), 0)
     }
   }
 
@@ -442,19 +457,19 @@ class HotForm extends Polymer.Element {
 
   _fireEventSubmit (msg, e) {
     if (msg) {
-      this.dispatchEvent(new CustomEvent('user-message-info', { detail: { message: msg }, bubbles: true }))
+      this.dispatchEvent(new CustomEvent('user-message-info', { detail: { message: msg }, bubbles: true, composed: true }))
     }
   }
 
   _fireEventResponse (msg, e) {
     if (msg) {
-      this.dispatchEvent(new CustomEvent('user-message-success', { detail: { message: msg }, bubbles: true }))
+      this.dispatchEvent(new CustomEvent('user-message-success', { detail: { message: msg }, bubbles: true, composed: true }))
     }
   }
 
   _fireEventError (msg, e) {
     if (msg) {
-      this.dispatchEvent(new CustomEvent('user-message-error', { detail: { message: msg }, bubbles: true }))
+      this.dispatchEvent(new CustomEvent('user-message-error', { detail: { message: msg }, bubbles: true, composed: true }))
     }
   }
 
@@ -472,13 +487,6 @@ class HotForm extends Polymer.Element {
     var form = this.form
 
     var request = ironForm.request
-
-    // If it's a PUT, then the actual URL for the request needs to include
-    // the ID (if present)
-    // if( form.getAttribute( 'method' ).toUpperCase() === 'PUT' ){
-
-    // request.body = this.form.serialize();
-    // request.params = {};
 
     // Set the correct URL for the PUT
     if (this.recordId) {
@@ -500,8 +508,8 @@ class HotForm extends Polymer.Element {
     if (this.ironForm && returnObject && typeof returnObject === 'object' && Array.isArray(returnObject.errors)) {
       for (var i = 0, l = returnObject.errors.length; i < l; i++) {
         var error = returnObject.errors[ i ]
-        var domField = this.ironForm._getSubmittableElements().find(el => el.name === error.field)
-        if (!domField || domField.type === 'hidden') domField = this.ironForm._getSubmittableElements().find(el => el.vname === error.field)
+        var domField = this.allSubmittableElements().find(el => el.name === error.field)
+        if (!domField || domField.type === 'hidden') domField = this.allSubmittableElements().find(el => el.vname === error.field)
         if (domField) {
           domField.errorMessage = error.message
           domField.invalid = true
@@ -517,7 +525,9 @@ class HotForm extends Polymer.Element {
         b.disabled = true
       })
     }
-    this.form.disabled = true
+
+    // Make input fields unsubmittable
+    this.allSubmittableElements().forEach(b => { b.disabled = true })
 
     // Give a submit message
     if (this.submitMessage !== '') {
@@ -540,7 +550,8 @@ class HotForm extends Polymer.Element {
       })
     }
 
-    this.form.disabled = false
+    // Make input fields submittable again
+    this.allSubmittableElements().forEach(b => { b.disabled = false })
 
     // this._setOrResetForm( e );
   }
@@ -556,7 +567,9 @@ class HotForm extends Polymer.Element {
       })
     }
 
-    this.form.disabled = false
+    // Make input fields submittable again
+    this.allSubmittableElements().forEach(b => { b.disabled = false })
+
     this._setOrResetForm(e)
   }
 
@@ -584,12 +597,12 @@ class HotForm extends Polymer.Element {
   _setFieldsAsObject (r) {
     if (typeof r === 'object' && r !== null) {
       for (var k in r) {
-        var domField = this.ironForm.$$("[name='" + k + "']")
+        var domField = this.allChildrenNamed(this.form, k)[0]
 
         if (domField) {
-          if (this.ironForm._usesCheckedInsteadOfValue(domField)) {
+          if (domField['_hasIronCheckedElementBehavior']) {
             if (typeof r[k] !== 'undefined') {
-              domField.checked = r[ k ]
+              domField.checked = !!r[ k ]
             }
           } else {
             if (typeof r[k] !== 'undefined') domField.value = r[ k ]
