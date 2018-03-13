@@ -435,6 +435,7 @@ class HotForm extends Polymer.Element {
       // before firing
 
       setTimeout(function () {
+        this.allSubmittableElements().forEach(b => { b.disabled = true })
         this.request.generateRequest()
       }.bind(this), 0)
     }
@@ -445,6 +446,7 @@ class HotForm extends Polymer.Element {
    * with whatever came back.
   */
   _dataLoaderResponse () {
+    this.allSubmittableElements().forEach(b => { b.disabled = false })
     this._setFieldsAsObject(this.request.lastResponse)
   }
 
