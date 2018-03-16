@@ -267,14 +267,14 @@ class HotForm extends Polymer.Element {
     ]
   }
 
-  allChildrenNamed (node, tagName, firstOnly, doNotVisitTagName) {
+  allChildrenNamed (node, name, firstOnly, doNotVisitTagName) {
     var list = []
     var quitVisit = false
     function visit (node) {
       if (quitVisit) return
       var c$ = Polymer.FlattenedNodesObserver.getFlattenedNodes(node)
       for (var i = 0, l = c$.length, c; (i < l), (c = c$[ i ]); i++) { // eslint-disable-line
-        if (c.tagName === tagName || c.name === tagName) {
+        if (c.tagName === name || c.name === name) {
           list.push(c)
           // If only the first one is to be found,
           if (firstOnly) {
@@ -305,22 +305,13 @@ class HotForm extends Polymer.Element {
     return list
   }
 
-  connectedCallback () {
-    super.connectedCallback()
-    this.addEventListener('iron-form-presubmit', this._prepareToSubmit)
-    this._wirePaperButtonToSubmit()
-    this.addEventListener('iron-form-submit', this._formSubmit)
-    this.addEventListener('iron-form-response', this._formResponse)
-    this.addEventListener('iron-form-error', this._formError)
-  }
+  constructor () {
+    super()
 
-  disconnectedCallback () {
-    super.disconnectedCallback()
-    this.removeEventListener('iron-form-presubmit', this._prepareToSubmit)
-    this._unwirePaperButtonToSubmit()
-    this.removeEventListener('iron-form-submit', this._formSubmit)
-    this.removeEventListener('iron-form-response', this._formResponse)
-    this.removeEventListener('iron-form-error', this._formError)
+    this._prepareToSubmitBound = this._prepareToSubmit.bind(this)
+    this._formSubmitBound = this._formSubmit.bind(this)
+    this._formResponseBound = this._formResponse.bind(this)
+    this._formErrorBound = this._formError.bind(this)
   }
 
   ready () {
@@ -344,7 +335,25 @@ class HotForm extends Polymer.Element {
       self.form = self.ironForm._form
       self.$.a11y.target = self.form
       self._loadData()
-    }, 0)
+    })
+  }
+
+  connectedCallback () {
+    super.connectedCallback()
+    this.ironForm.addEventListener('iron-form-presubmit', this._prepareToSubmitBound)
+    this._wirePaperButtonToSubmit()
+    this.ironForm.addEventListener('iron-form-submit', this._formSubmitBound)
+    this.ironForm.addEventListener('iron-form-response', this._formResponseBound)
+    this.ironForm.addEventListener('iron-form-error', this._formErrorBound)
+  }
+
+  disconnectedCallback () {
+    super.disconnectedCallback()
+    this.ironForm.removeEventListener('iron-form-presubmit', this._prepareToSubmitBound)
+    this._unwirePaperButtonToSubmit()
+    this.ironForm.removeEventListener('iron-form-submit', this._formSubmitBound)
+    this.ironForm.removeEventListener('iron-form-response', this._formResponseBound)
+    this.ironForm.removeEventListener('iron-form-error', this._formErrorBound)
   }
 
   // **********************************************************
@@ -437,6 +446,7 @@ class HotForm extends Polymer.Element {
       setTimeout(function () {
         this.allSubmittableElements().forEach(b => { b.disabled = true })
         this.request.generateRequest()
+        this.dispatchEvent(new CustomEvent('hot-form-loader-submit', { bubbles: false, composed: true }))
       }.bind(this), 0)
     }
   }
@@ -445,15 +455,18 @@ class HotForm extends Polymer.Element {
    * The request by `this.request` worked: pre-fill the form's information
    * with whatever came back.
   */
-  _dataLoaderResponse () {
+  _dataLoaderResponse (e) {
     this.allSubmittableElements().forEach(b => { b.disabled = false })
     this._setFieldsAsObject(this.request.lastResponse)
+    this.dispatchEvent(new CustomEvent('hot-form-loader-response', { detail: e.detail, bubbles: false, composed: true }))
   }
 
   /**
    * The request by `this.request` didn't work.
   */
-  _dataLoaderError () {
+  _dataLoaderError (e) {
+    this.allSubmittableElements().forEach(b => { b.disabled = false })
+    this.dispatchEvent(new CustomEvent('hot-form-loader-error', { detail: e.detail, bubbles: false, composed: true }))
     // console.log("RESPONDED WITH ERROR!");
   }
 
