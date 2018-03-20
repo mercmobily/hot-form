@@ -86,7 +86,7 @@ In some cases, you might want the PUT request to use slightly different URLs:
 If `record-id` is set, the element will make a GET AJAX call to the `action` URL (in the example above, `GET /stores/polymer/57902ef29b880cd678a3d7a9` fetching the current record's value. It will also pre-set the form's value to
 match those returned by the server.
 
-Record autoload will happen automatically when `record-id` is set; it can be turned off with the no-autoload attribute (in case values are already available from a cache, but you still want `hot-form` to _save_ them).
+Record autoload will happen automatically when `record-id` is set; it can be turned off with the skip-autoload attribute (in case values are already available from a cache, but you still want `hot-form` to _save_ them).
 
 **Note**: the response must be a JSON record, where each field's key corresponds to the element's `name` attribute. In the example above, a valid JSON in return would be:
 
@@ -160,7 +160,7 @@ class HotForm extends Polymer.Element {
     return {
       /**
        * The record ID, used to load data from server (if record-id is set and
-       * no-autoload isn't set)
+       * skip-autoload isn't set)
       */
       recordId: {
         type: String,
@@ -170,8 +170,8 @@ class HotForm extends Polymer.Element {
       /**
        * By default, if `record-id` is set the form will make an AJAX GET call to the
        * action URL to fetch the current value. This will deactivate this feature
-      */
-      noAutoload: {
+       */
+      skipAutoload: {
         type: Boolean,
         value: false
       },
@@ -180,7 +180,7 @@ class HotForm extends Polymer.Element {
        * Action once the response to a POST received. It can be `reset` (the form is reset),
        * `set` (the form is set with the returned data) or nothing
        *
-      */
+       */
       actionAfterPostResponse: {
         type: String,
         value: 'reset'
@@ -189,7 +189,7 @@ class HotForm extends Polymer.Element {
       /**
        * Action once the response to a PUT received. It can be `reset` (the form is reset),
        * `set` (the form is set with the returned data) or nothing
-      */
+       */
       actionAfterPutResponse: {
         type: String,
         value: 'set'
@@ -424,8 +424,9 @@ class HotForm extends Polymer.Element {
    * and generates the request.
   */
   _loadData () {
+    debugger
     // Set the correct URL for the GET, as well as handleAs
-    if (this.recordId && !this.noAutoload) {
+    if (this.recordId && !this.skipAutoload) {
       this.requestUrl = this.form.getAttribute('action') + (this.noRecordIdAppend ? '' : ('/' + this.recordId))
 
       if (this.getSuffix) {
@@ -483,6 +484,7 @@ class HotForm extends Polymer.Element {
   }
 
   _fireEventError (msg, e) {
+    debugger
     if (msg) {
       this.dispatchEvent(new CustomEvent('user-message-error', { detail: { message: msg }, bubbles: true, composed: true }))
     }
@@ -551,6 +553,7 @@ class HotForm extends Polymer.Element {
   }
 
   _formError (e) {
+    debugger
     var returnObject = e.detail.request.xhr.response
     if (returnObject && typeof returnObject === 'object') {
       this._fireEventError(returnObject.message, e)
