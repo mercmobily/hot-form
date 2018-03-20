@@ -424,7 +424,6 @@ class HotForm extends Polymer.Element {
    * and generates the request.
   */
   _loadData () {
-    debugger
     // Set the correct URL for the GET, as well as handleAs
     if (this.recordId && !this.skipAutoload) {
       this.requestUrl = this.form.getAttribute('action') + (this.noRecordIdAppend ? '' : ('/' + this.recordId))
@@ -484,7 +483,6 @@ class HotForm extends Polymer.Element {
   }
 
   _fireEventError (msg, e) {
-    debugger
     if (msg) {
       this.dispatchEvent(new CustomEvent('user-message-error', { detail: { message: msg }, bubbles: true, composed: true }))
     }
