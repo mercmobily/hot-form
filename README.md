@@ -9,10 +9,12 @@ Ask yourself these questions:
 
 * Do you need to load data from the server before showing the form?
 * Do you want to overwrite a record (PUT with an existing ID), or create a new one (POST, no ID) or create a record with an arbitrary ID (PUT with a new ID)? Do you realise that you will need POST or PUT calls?
+* Do you want to render ALL input fields _automatically_ disabled while the form is being submitted?
 * Do you want to highlight the problem fields if the form is NOT a success?
 * Do you want to submit the form when the user presses ENTER on a paper-input widget?
 * Do you want to refresh the data with the saved info coming back from the server after saving?
-* Do you want to make it possible for other widgets to display messages to the user?
+* Do you want to display messages to the user?
+* Do you want to have fields in a form that won't actually get submitted?
 
 If the answer is yes, and you are coding this each time from scratch, then maybe you should consider using a decorator element that does _all_ of this for you. **Welcome to `hot-form`**.
 
@@ -79,7 +81,7 @@ In some cases, you might want the PUT request to use slightly different URLs:
 If `record-id` is set, the element will make a GET AJAX call to the `action` URL (in the example above, `GET /stores/polymer/57902ef29b880cd678a3d7a9` fetching the current record's value. It will also pre-set the form's value to
 match those returned by the server.
 
-Record autoload will happen automatically when `record-id` is set; it can be turned off with the no-autoload attribute (in case values are already available from a cache, but you still want `hot-form` to _save_ them).
+Record autoload will happen automatically when `record-id` is set; it can be turned off with the skip-autoload attribute (in case values are already available from a cache, but you still want `hot-form` to _save_ them).
 
 **Note**: the response must be a JSON record, where each field's key corresponds to the element's `name` attribute. In the example above, a valid JSON in return would be:
 
@@ -118,4 +120,18 @@ If you want to disable "submit by pressing enter", just add `no-enter-submit` to
     </hot-form>
 
 If you don't want to submit the form with a button automatically, just avoid setting a paper-button as `type=submit`.
+
+## Do not submit specific fields
+
+Sometimes, you need to have input fields in the form, and yet not submit those values. For example, you might have a "country" field that is actually an auto-complete field, which in turns will set the country's ID as an input field.
+Every input field must have a name -- for example, if they don't they won't reset.
+For this use case, just prefix "local" fields (not to be submitted) with `_local`. THe following example is a typical use case: the country ID will depend on what was picked by hot-autocomplete; prefixing the paper-input's name with `_local` will prevent the field `country` to be submitted.
+
+    Country code: {{pickedCountry.id}}
+    <hot-autocomplete must-match picked="{{pickedCountry}}" suggestions-path="name" url="/stores/countries?nameStartsWith={{countryName}}" method="get">
+      <paper-input name="_localCountry" vname="country" value="{{countryName}}" required id="countryName" label="Country"></paper-input>
+    </hot-autocomplete>
+    <input type="hidden" name="countryId" value="{{pickedCountry.id}}">
+
+
 
