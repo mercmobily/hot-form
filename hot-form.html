@@ -434,6 +434,10 @@ class HotForm extends Polymer.Element {
     }
   }
 
+  reload () {
+    this._loadData()
+  }
+
   /**
    * Prepare the `this.request` widget with the right URL (which depends on recordId)
    * and generates the request.
