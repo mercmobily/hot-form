@@ -179,7 +179,8 @@ class HotForm extends Polymer.Element {
       */
       recordId: {
         type: String,
-        notify: true
+        notify: true,
+        value: '',
       },
 
       /**
@@ -444,7 +445,7 @@ class HotForm extends Polymer.Element {
   */
   _loadData () {
     // Set the correct URL for the GET, as well as handleAs
-    if (this.recordId && !this.skipAutoload) {
+    if (this.recordId !== '' && !this.skipAutoload) {
       this.requestUrl = this.form.getAttribute('action') + (this.noRecordIdAppend ? '' : ('/' + this.recordId))
 
       if (this.getSuffix) {
@@ -537,7 +538,7 @@ class HotForm extends Polymer.Element {
     }
 
     // Set the correct URL for the PUT
-    if (this.recordId) {
+    if (this.recordId !== '') {
       var requestUrl = form.getAttribute('action') + (this.noRecordIdAppend ? '' : ('/' + this.recordId))
       if (this.putSuffix) {
         requestUrl = requestUrl + this.putSuffix
@@ -556,6 +557,7 @@ class HotForm extends Polymer.Element {
     if (this.ironForm && returnObject && typeof returnObject === 'object' && Array.isArray(returnObject.errors)) {
       for (var i = 0, l = returnObject.errors.length; i < l; i++) {
         var error = returnObject.errors[ i ]
+        if (!error) return
         var domField = this.allSubmittableElements().find(el => el.name === error.field)
         if (!domField || domField.type === 'hidden') domField = this.allSubmittableElements().find(el => el.vname === error.field)
         if (domField) {
@@ -623,7 +625,7 @@ class HotForm extends Polymer.Element {
 
   _setOrResetForm (e) {
     var propToCheck
-    if (this.recordId) {
+    if (this.recordId !== '') {
       propToCheck = 'actionAfterPutResponse'
     } else {
       propToCheck = 'actionAfterPostResponse'
