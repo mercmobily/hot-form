@@ -103,6 +103,31 @@ When getting the response after issuing a POST request (no `record-id` appended)
 
 When getting the response after issuing a PUT request (with `record-id` appended to the request), the form is automatically set to the values that came back from the server. This means that if the server did any manipulation to the data, the form will display the correct, current information. This can be changed with the `action-after-put-response` attribute, that can be set to `set` (the default), `reset` or `none`.
 
+## Set an object's keys when the response arrives
+
+Sometimes, you want to be able to see what was returned by the form's AJAX call. This is useful when a field's visibility  depends on information on the database.
+For example, you might have a button tha says "Send email reminder", but only if the email is set.
+For this purpose, you can bind a variabl to `info`, which allows 2-way binding.
+For example:
+
+    <iron-ajax url="/stores/contacts/{{routeData.contactId}}" last-response="{{info}}" auto></iron-ajax>
+
+    <iron-ajax method="post" id="passwordResetAjax" url="/routes/passwordReset/{{routeData.contactId}}"></iron-ajax>
+    <paper-button disabled="{{_emptyString(info.email)}}" raised on-tap="_sendPasswordResetEmail">Send reset password email</paper-button>
+
+    <hot-form submit-message="Edit" record-id="{{info.id}}" info="{{info}}" skip-autoload action-after-put-response="none">
+      <hot-network>
+        <iron-form id="ironForm">
+          <form enctype="application/json" method="post" action="/stores/companies">
+            <paper-input value="[[info.email]]" required id="email" name="email" label="Email"></paper-input>
+            <paper-button type="submit" raised>Save!</paper-button>
+          </form>
+        </iron-form>
+      </hot-network>
+    </hot-form>
+
+As you can see, `paper-button` is disabled if `info.email` is not there. However, since the element's `info` property is bound to `hot-form`'s `info` property, when `hot-form` assigns values to `info`, `{{_emptyString(info.email)}}` will actually work (since the element's `info.email` will be set to the email value returned by the AJAX call).
+
 ## Sane submission when pressing "enter" or clicking the submit button
 
 This element allows you to automatically submit form when you press enter on a `paper-input` field, or when clicking on the button marked as `type=submit`.
@@ -125,11 +150,11 @@ If you don't want to submit the form with a button automatically, just avoid set
 
 Sometimes, you need to have input fields in the form, and yet not submit those values. For example, you might have a "country" field that is actually an auto-complete field, which in turns will set the country's ID as an input field.
 Every input field must have a name -- for example, if they don't they won't reset.
-For this use case, just prefix "local" fields (not to be submitted) with `_local`. THe following example is a typical use case: the country ID will depend on what was picked by hot-autocomplete; prefixing the paper-input's name with `_local` will prevent the field `country` to be submitted.
+For this use case, just prefix "local" fields (not to be submitted) with `_`. THe following example is a typical use case: the country ID will depend on what was picked by hot-autocomplete; prefixing the paper-input's name with `_` will prevent the field `country` to be submitted.
 
     Country code: {{pickedCountry.id}}
     <hot-autocomplete must-match picked="{{pickedCountry}}" suggestions-path="name" url="/stores/countries?nameStartsWith={{countryName}}" method="get">
-      <paper-input name="_localCountry" vname="country" value="{{countryName}}" required id="countryName" label="Country"></paper-input>
+      <paper-input name="_country" vname="country" value="{{countryName}}" required id="countryName" label="Country"></paper-input>
     </hot-autocomplete>
     <input type="hidden" name="countryId" value="{{pickedCountry.id}}">
 
