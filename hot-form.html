@@ -2,7 +2,6 @@
 <link rel="import" href="../polymer/lib/utils/flattened-nodes-observer.html">
 <link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
-
 <!--
 
 [![Published on webcomponents.org](https://img.shields.io/badge/webcomponents.org-published-blue.svg)](https://www.webcomponents.org/element/mercmobily/hot-form)
@@ -180,7 +179,7 @@ class HotForm extends Polymer.Element {
       recordId: {
         type: String,
         notify: true,
-        value: '',
+        value: ''
       },
 
       /**
@@ -282,7 +281,6 @@ class HotForm extends Polymer.Element {
       '_changedRecordId(recordId)'
     ]
   }
-
   allChildrenNamed (node, name, firstOnly, doNotVisitTagName) {
     var list = []
     var quitVisit = false
