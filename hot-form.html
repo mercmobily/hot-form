@@ -139,6 +139,9 @@ For this use case, just prefix "local" fields (not to be submitted) with `_`. TH
     <input type="hidden" name="countryId" value="{{pickedCountry.id}}">
 
 
+## Emit event before submission
+
+Before submitting the form, hot-form will emit a `iron-form-presubmit` event. Note that this is fires _way before_ `iron-form`'s `iron-form-presubmit` event, which is fired when the form is already serialised and ready to be sent over the wire. `iron-form-presubmit` is fired before running `submit()` on the `iron-form` itself. This is handy for example in case you want to re-enable some fields (so that they are serialised) while they were read-only (or disabled) on the form, so that their values are included in the form's serialisation.
 
 @group Hotplate Elements
 @element hot-form
@@ -414,6 +417,8 @@ class HotForm extends Polymer.Element {
   _maybeSubmit () {
     // Don't re-submit if loading
     if (this.ironForm.request && this.ironForm.request.loading) return
+
+    this.dispatchEvent(new CustomEvent('hot-form-presubmit'))
 
     // Actually submit the form
     this.ironForm.submit()

@@ -125,13 +125,16 @@ If you don't want to submit the form with a button automatically, just avoid set
 
 Sometimes, you need to have input fields in the form, and yet not submit those values. For example, you might have a "country" field that is actually an auto-complete field, which in turns will set the country's ID as an input field.
 Every input field must have a name -- for example, if they don't they won't reset.
-For this use case, just prefix "local" fields (not to be submitted) with `_local`. THe following example is a typical use case: the country ID will depend on what was picked by hot-autocomplete; prefixing the paper-input's name with `_local` will prevent the field `country` to be submitted.
+For this use case, just prefix "local" fields (not to be submitted) with `_`. THe following example is a typical use case: the country ID will depend on what was picked by hot-autocomplete; prefixing the paper-input's name with `_` will prevent the field `country` to be submitted.
 
     Country code: {{pickedCountry.id}}
     <hot-autocomplete must-match picked="{{pickedCountry}}" suggestions-path="name" url="/stores/countries?nameStartsWith={{countryName}}" method="get">
-      <paper-input name="_localCountry" vname="country" value="{{countryName}}" required id="countryName" label="Country"></paper-input>
+      <paper-input name="_country" vname="country" value="{{countryName}}" required id="countryName" label="Country"></paper-input>
     </hot-autocomplete>
     <input type="hidden" name="countryId" value="{{pickedCountry.id}}">
 
 
+## Emit event before submission
+
+Before submitting the form, hot-form will emit a `iron-form-presubmit` event. Note that this is fires _way before_ `iron-form`'s `iron-form-presubmit` event, which is fired when the form is already serialised and ready to be sent over the wire. `iron-form-presubmit` is fired before running `submit()` on the `iron-form` itself. This is handy for example in case you want to re-enable some fields (so that they are serialised) while they were read-only (or disabled) on the form, so that their values are included in the form's serialisation.
 
