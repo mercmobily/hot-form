@@ -108,6 +108,31 @@ When getting the response after issuing a POST request (no `record-id` appended)
 
 When getting the response after issuing a PUT request (with `record-id` appended to the request), the form is automatically set to the values that came back from the server. This means that if the server did any manipulation to the data, the form will display the correct, current information. This can be changed with the `action-after-put-response` attribute, that can be set to `set` (the default), `reset` or `none`.
 
+## Set an object's keys when the response arrives
+
+Sometimes, you want to be able to see what was returned by the form's AJAX call. This is useful when a field's visibility  depends on information on the database.
+For example, you might have a button tha says "Send email reminder", but only if the email is set.
+For this purpose, you can bind a variabl to `info`, which allows 2-way binding.
+For example:
+
+    <iron-ajax url="/stores/contacts/{{routeData.contactId}}" last-response="{{info}}" auto></iron-ajax>
+
+    <iron-ajax method="post" id="passwordResetAjax" url="/routes/passwordReset/{{routeData.contactId}}"></iron-ajax>
+    <paper-button disabled="{{_emptyString(info.email)}}" raised on-tap="_sendPasswordResetEmail">Send reset password email</paper-button>
+
+    <hot-form submit-message="Edit" record-id="{{info.id}}" info="{{info}}" skip-autoload action-after-put-response="none">
+      <hot-network>
+        <iron-form id="ironForm">
+          <form enctype="application/json" method="post" action="/stores/companies">
+            <paper-input value="[[info.email]]" required id="email" name="email" label="Email"></paper-input>
+            <paper-button type="submit" raised>Save!</paper-button>
+          </form>
+        </iron-form>
+      </hot-network>
+    </hot-form>
+
+As you can see, `paper-button` is disabled if `info.email` is not there. However, since the element's `info` property is bound to `hot-form`'s `info` property, when `hot-form` assigns values to `info`, `{{_emptyString(info.email)}}` will actually work (since the element's `info.email` will be set to the email value returned by the AJAX call).
+
 ## Sane submission when pressing "enter" or clicking the submit button
 
 This element allows you to automatically submit form when you press enter on a `paper-input` field, or when clicking on the button marked as `type=submit`.
@@ -183,6 +208,16 @@ class HotForm extends Polymer.Element {
         type: String,
         notify: true,
         value: ''
+      },
+
+      /**
+       * The object containing the data returned by the ajax call. It will notify,
+       * so that apps can have two-way binding to it
+      */
+      info: {
+        type: Object,
+        notify: true,
+        value: () => null
       },
 
       /**
@@ -624,6 +659,7 @@ class HotForm extends Polymer.Element {
     this.allSubmittableElements().forEach(b => { b.disabled = false })
 
     this._setOrResetForm(e)
+    this._setInfo(e)
   }
 
   _setOrResetForm (e) {
@@ -644,28 +680,41 @@ class HotForm extends Polymer.Element {
     }
   }
 
+  _setInfo (e) {
+    var r = e.detail.response
+    if (typeof r !== 'object' || r === null) return
+
+    for (var k in r) {
+      this.set(`info.${k}`, r[ k ])
+    }
+  }
+
   // **********************************************************
   // UTILITY FUNCTIONS
   // **********************************************************
   _setFieldsAsObject (r) {
-    if (typeof r === 'object' && r !== null) {
-      for (var k in r) {
-        // var domField = this.allChildrenNamed(this.form, `_${k}`)[0]
-        // if (!domField)
-        var domField = this.allChildrenNamed(this.form, k)[0]
+    if (typeof r !== 'object' || r === null) return
 
-        if (domField) {
-          if (domField['_hasIronCheckedElementBehavior']) {
-            if (typeof r[k] !== 'undefined') {
-              domField.checked = !!r[ k ]
-            }
-          } else {
-            if (typeof r[k] !== 'undefined') domField.value = r[ k ]
+    for (var k in r) {
+      // var domField = this.allChildrenNamed(this.form, `_${k}`)[0]
+      // if (!domField)
+      var domField = this.allChildrenNamed(this.form, k)[0]
+
+      if (domField) {
+        if (domField['_hasIronCheckedElementBehavior']) {
+          if (typeof r[k] !== 'undefined') {
+            domField.checked = !!r[ k ]
+            this.set(`info.${k}`, !!r[ k ])
           }
-          domField.dispatchEvent(new CustomEvent('value-changed'))
-          domField.dispatchEvent(new CustomEvent('change'))
+        } else {
+          if (typeof r[k] !== 'undefined') {
+            domField.value = r[ k ]
+            this.set(`info.${k}`, r[ k ])
+          }
         }
-      };
+        domField.dispatchEvent(new CustomEvent('value-changed'))
+        domField.dispatchEvent(new CustomEvent('change'))
+      }
     }
   }
 }
