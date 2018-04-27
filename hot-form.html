@@ -116,8 +116,7 @@ When the data loader is used, _and_ when a record is successfully submited to th
 
 * The `info` variable in `hot-form` is assigned, key-by-key, to whatever returned from the server. This variable will `notify` for changes. Binding `info` with the variable you preset your fields with will ensure that after a successful AJAX submission the `info` is kept in sync with what's on the database.
 
-HEre are two use cases.
-
+Here are two use cases.
 
 ### Field visibility
 
@@ -141,7 +140,7 @@ For example:
 
 As you can see, `paper-button` is disabled if `info.email` is not there. However, since the element's `info` property is bound to `hot-form`'s `info` property, when `hot-form` assigns values to `info`, `info.email` will be set to the email property returned by the AJAX call and `{{_empty(info.email)}}` will be set accordingly.
 
-### Extra fields in DB
+### Having pre-sets from extra info from the DB
 
 Imagine that you have a `my-picker` form element which act as a autocomplete input form (based on paper-input); assume that `my-picker` which accepts a `value` property (as its value) representing the ID of the picked record and also a `search-string` property which represents the description field of the picked record.
 
@@ -162,7 +161,7 @@ Assuming that the database will return _both_ the contact ID and the `contactIdS
   </hot-network>
 </hot-form>
 
-When the form is loaded, `my-picker` will have _both_ its value and its actual input field set properly. (This is assuming that the query to `/stores/contacts` will return both the `contactId` key and the `contactIdShownValue` key, probably using a JOIN in SQL)
+When the form is loaded or submitted, `my-picker` will have _both_ its value and its actual input field set properly. (This is assuming that the query to `/stores/contacts` will return both the `contactId` key and the `contactIdShownValue` key, probably using a JOIN in SQL)
 
 ## Sane submission when pressing "enter" or clicking the submit button
 
