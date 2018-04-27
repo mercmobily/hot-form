@@ -583,6 +583,7 @@ class HotForm extends Polymer.Element {
   _dataLoaderResponse (e) {
     this.allSubmittableElements().forEach(b => { b.disabled = false })
 
+    debugger
     // Assings each fields to the returned value, _and_ assigns info to the returned value too
     this._setFieldsAsObject(this.request.lastResponse)
     this._setInfo(this.request.lastResponse)
@@ -756,7 +757,6 @@ class HotForm extends Polymer.Element {
 
     for (var k in r) {
       let v = r[k]
-      if (v === null || typeof v === 'undefined') continue
       this.set(`info.${k}`, v)
     }
   }
@@ -774,15 +774,11 @@ class HotForm extends Polymer.Element {
 
       if (domField) {
         if (domField['_hasIronCheckedElementBehavior']) {
-          if (typeof r[k] !== 'undefined' && r[k] !== null) {
-            domField.checked = !!r[ k ]
-            this.set(`info.${k}`, !!r[ k ])
-          }
+          domField.checked = !!r[ k ]
+          this.set(`info.${k}`, !!r[ k ])
         } else {
-          if (typeof r[k] !== 'undefined' && r[k] !== null) {
-            domField.value = r[ k ]
-            this.set(`info.${k}`, r[ k ])
-          }
+          domField.value = r[ k ]
+          this.set(`info.${k}`, r[ k ])
         }
         domField.dispatchEvent(new CustomEvent('value-changed'))
         domField.dispatchEvent(new CustomEvent('change'))
