@@ -583,7 +583,6 @@ class HotForm extends Polymer.Element {
   _dataLoaderResponse (e) {
     this.allSubmittableElements().forEach(b => { b.disabled = false })
 
-    debugger
     // Assings each fields to the returned value, _and_ assigns info to the returned value too
     this._setFieldsAsObject(this.request.lastResponse)
     this._setInfo(this.request.lastResponse)
