@@ -103,22 +103,29 @@ When getting the response after issuing a POST request (no `record-id` appended)
 
 When getting the response after issuing a PUT request (with `record-id` appended to the request), the form is automatically set to the values that came back from the server. This means that if the server did any manipulation to the data, the form will display the correct, current information. This can be changed with the `action-after-put-response` attribute, that can be set to `set` (the default), `reset` or `none`.
 
-## Set an object's keys when the response arrives
+## Binding to the `info` property
+
+When the data loader is used, _and_ when a record is successfully submited to the server with `actionAfterPostResponse` or `actionAfterPostResponse` being equals to `set`, the following things will happen (in this order):
+
+* Any form field with an attribute `name` matching a property key in the JSON will have its value set to what the server returned for that property key.
+
+* The `info` variable in `hot-form` is assigned, key-by-key, to whatever returned from the server. This variable will `notify` for changes. Binding `info` with the variable you preset your fields with will ensure that after a successful AJAX submission the `info` is kept in sync with what's on the database.
+
+Here are two use cases.
+
+### Field visibility
 
 Sometimes, you want to be able to see what was returned by the form's AJAX call. This is useful when a field's visibility  depends on information on the database.
 For example, you might have a button tha says "Send email reminder", but only if the email is set.
 For this purpose, you can bind a variabl to `info`, which allows 2-way binding.
 For example:
 
-    <iron-ajax url="/stores/contacts/{{routeData.contactId}}" last-response="{{info}}" auto></iron-ajax>
-
-    <iron-ajax method="post" id="passwordResetAjax" url="/routes/passwordReset/{{routeData.contactId}}"></iron-ajax>
     <paper-button disabled="{{_emptyString(info.email)}}" raised on-tap="_sendPasswordResetEmail">Send reset password email</paper-button>
 
-    <hot-form submit-message="Edit" record-id="{{info.id}}" info="{{info}}" skip-autoload action-after-put-response="none">
+    <hot-form submit-message="Edit" record-id="{{routeData.contactId}}" info="{{info}}" action-after-put-response="set">
       <hot-network>
         <iron-form id="ironForm">
-          <form enctype="application/json" method="post" action="/stores/companies">
+          <form enctype="application/json" method="post" action="/stores/contacts">
             <paper-input value="[[info.email]]" required id="email" name="email" label="Email"></paper-input>
             <paper-button type="submit" raised>Save!</paper-button>
           </form>
@@ -126,7 +133,30 @@ For example:
       </hot-network>
     </hot-form>
 
-As you can see, `paper-button` is disabled if `info.email` is not there. However, since the element's `info` property is bound to `hot-form`'s `info` property, when `hot-form` assigns values to `info`, `{{_emptyString(info.email)}}` will actually work (since the element's `info.email` will be set to the email value returned by the AJAX call).
+As you can see, `paper-button` is disabled if `info.email` is not there. However, since the element's `info` property is bound to `hot-form`'s `info` property, when `hot-form` assigns values to `info`, `info.email` will be set to the email property returned by the AJAX call and `{{_empty(info.email)}}` will be set accordingly.
+
+### Having pre-sets from extra info from the DB
+
+Imagine that you have a `my-picker` form element which act as a autocomplete input form (based on paper-input); assume that `my-picker` which accepts a `value` property (as its value) representing the ID of the picked record and also a `search-string` property which represents the description field of the picked record.
+
+    <my-picker required name="contactId" value="[[info.contactId]]" search-string="[[info.contactIdShownValue]]" store-name="contacts"></my-picker>
+
+Assuming that the database will return _both_ the contact ID and the `contactIdShownValue`, this will work:
+
+<hot-form submit-message="Edit" record-id="{{routeData.contactId}}" info="{{info}}" action-after-put-response="set">
+  <hot-network>
+    <iron-form id="ironForm">
+      <form enctype="application/json" method="post" action="/stores/contacts">
+
+        <my-picker required name="contactId" value="[[info.contactId]]" search-string="[[info.contactIdShownValue]]" store-name="contacts"></my-picker>
+
+        <paper-button type="submit" raised>Save!</paper-button>
+      </form>
+    </iron-form>
+  </hot-network>
+</hot-form>
+
+When the form is loaded or submitted, `my-picker` will have _both_ its value and its actual input field set properly. (This is assuming that the query to `/stores/contacts` will return both the `contactId` key and the `contactIdShownValue` key, probably using a JOIN in SQL)
 
 ## Sane submission when pressing "enter" or clicking the submit button
 
@@ -157,6 +187,32 @@ For this use case, just prefix "local" fields (not to be submitted) with `_`. TH
       <paper-input name="_country" vname="country" value="{{countryName}}" required id="countryName" label="Country"></paper-input>
     </hot-autocomplete>
     <input type="hidden" name="countryId" value="{{pickedCountry.id}}">
+
+
+## Set an object's keys when the response arrives
+
+Sometimes, you want to be able to see what was returned by the form's AJAX call. This is useful when a field's visibility  depends on information on the database.
+For example, you might have a button tha says "Send email reminder", but only if the email is set.
+For this purpose, you can bind a variabl to `info`, which allows 2-way binding.
+For example:
+
+    <iron-ajax url="/stores/contacts/{{routeData.contactId}}" last-response="{{info}}" auto></iron-ajax>
+
+    <iron-ajax method="post" id="passwordResetAjax" url="/routes/passwordReset/{{routeData.contactId}}"></iron-ajax>
+    <paper-button disabled="{{_emptyString(info.email)}}" raised on-tap="_sendPasswordResetEmail">Send reset password email</paper-button>
+
+    <hot-form submit-message="Edit" record-id="{{info.id}}" info="{{info}}" action-after-put-response="none">
+      <hot-network>
+        <iron-form id="ironForm">
+          <form enctype="application/json" method="post" action="/stores/companies">
+            <paper-input value="[[info.email]]" required id="email" name="email" label="Email"></paper-input>
+            <paper-button type="submit" raised>Save!</paper-button>
+          </form>
+        </iron-form>
+      </hot-network>
+    </hot-form>
+
+As you can see, `paper-button` is disabled if `info.email` is not there. However, since the element's `info` property is bound to `hot-form`'s `info` property, when `hot-form` assigns values to `info`, `{{_emptyString(info.email)}}` will actually work (since the element's `info.email` will be set to the email value returned by the AJAX call).
 
 
 ## Emit event before submission
