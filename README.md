@@ -97,6 +97,8 @@ This means that you can create your form, _and_ know that the existing record's 
 
 Just like `put-suffix`, you can define a `get-suffix` parameter which will be appended to GET (preload) requests.
 
+Finally, you can set `preload-url` if the URL used to preload data is different to the one used in the form itself as `action`.
+
 ## Reset form when response arrives, or set values based on returned values
 
 When getting the response after issuing a POST request (no `record-id` appended), the form is automatically reset. This can be changed with the `action-after-post-response` attribute, that can be set to `set`, `reset` (the default) or `none`.
