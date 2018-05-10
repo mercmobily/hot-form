@@ -221,6 +221,7 @@ For example:
 
 As you can see, `paper-button` is disabled if `info.email` is not there. However, since the element's `info` property is bound to `hot-form`'s `info` property, when `hot-form` assigns values to `info`, `{{_emptyString(info.email)}}` will actually work (since the element's `info.email` will be set to the email value returned by the AJAX call).
 
+As well as setting the `info` property, when a response is received (from preloading or saving), hot-form will also set all elements with matching name with the received response. If you don't want fields to be set, add the `skip-set` attribute to it.
 
 ## Emit event before submission
 
@@ -782,7 +783,7 @@ class HotForm extends Polymer.Element {
       // if (!domField)
       var domField = this.allChildrenNamed(this.form, k)[0]
 
-      if (domField) {
+      if (domField && domField.getAttribute('skip-set') === null) {
         if (domField['_hasIronCheckedElementBehavior']) {
           domField.checked = !!r[ k ]
           this.set(`info.${k}`, !!r[ k ])
