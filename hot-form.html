@@ -2,8 +2,8 @@
 <link rel="import" href="../polymer/lib/utils/flattened-nodes-observer.html">
 <link rel="import" href="../iron-a11y-keys/iron-a11y-keys.html">
 <link rel="import" href="../iron-ajax/iron-ajax.html">
-<!--
 
+<!--
 [![Published on webcomponents.org](https://img.shields.io/badge/webcomponents.org-published-blue.svg)](https://www.webcomponents.org/element/mercmobily/hot-form)
 
 (Note: if you use this element, you should also consider using [hot-network (GitHub)](https://github.com/mercmobily/hot-network) [hot-network (WebComponents)](https://www.webcomponents.org/element/mercmobily/hot-network)
@@ -788,8 +788,10 @@ class HotForm extends Polymer.Element {
           domField.checked = !!r[ k ]
           this.set(`info.${k}`, !!r[ k ])
         } else {
-          domField.value = r[ k ]
-          this.set(`info.${k}`, r[ k ])
+          if (domField.getAttribute('type') !== 'file') {
+            domField.value = r[ k ]
+            this.set(`info.${k}`, r[ k ])
+          }
         }
         domField.dispatchEvent(new CustomEvent('value-changed'))
         domField.dispatchEvent(new CustomEvent('change'))
