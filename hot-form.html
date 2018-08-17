@@ -423,7 +423,7 @@ class HotForm extends Polymer.Element {
     function visit (node) {
       var c$ = Polymer.FlattenedNodesObserver.getFlattenedNodes(node)
       for (var i = 0, l = c$.length, c; (i < l), (c = c$[ i ]); i++) { // eslint-disable-line
-        if (c.name || typeof c.valudate === 'function') list.push(c)
+        if (c.name || typeof c.validate === 'function') list.push(c)
         visit(c)
       }
     }
@@ -746,10 +746,10 @@ class HotForm extends Polymer.Element {
 
   _setOrResetForm (e) {
     var propToCheck
-    if (this.recordId !== '') {
-      propToCheck = 'actionAfterPutResponse'
-    } else {
+    if (typeof this.recordId === 'undefined' || this.recordId === '') {
       propToCheck = 'actionAfterPostResponse'
+    } else {
+      propToCheck = 'actionAfterPutResponse'
     }
 
     // Either
@@ -788,7 +788,7 @@ class HotForm extends Polymer.Element {
           domField.checked = !!r[ k ]
           this.set(`info.${k}`, !!r[ k ])
         } else {
-          if (domField.getAttribute('type') !== 'file') {
+          if (domField.getAttribute('type') !== 'file' && !domField.getAttribute('type') !== 'hidden') {
             domField.value = r[ k ]
             this.set(`info.${k}`, r[ k ])
           }
