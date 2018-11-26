@@ -183,6 +183,8 @@ If you want to disable "submit by pressing enter", just add `no-enter-submit` to
 
 If you don't want to submit the form with a button automatically, just avoid setting a paper-button as `type=submit`.
 
+All PAPER-INPUT elements will submit when pressing enter; other elements will need to have the attribute `enter-submit` set in order for them to trigger submission with enter.
+
 ## Do not submit specific fields
 
 Sometimes, you need to have input fields in the form, and yet not submit those values. For example, you might have a "country" field that is actually an auto-complete field, which in turns will set the country's ID as an input field.
@@ -510,8 +512,9 @@ class HotForm extends Polymer.Element {
     // Only trigger submission if noEnterSubmit is not
     // (I know, double negatives right?)
     if (!this.noEnterSubmit) {
+      debugger
       // Only trigger submission for paper-input widgets
-      if (ke.localTarget.tagName === 'PAPER-INPUT') {
+      if (ke.localTarget.tagName === 'PAPER-INPUT' || ke.localTarget.getAttribute('enter-submit') !== null) {
         this._maybeSubmit()
       }
     }
@@ -593,13 +596,15 @@ class HotForm extends Polymer.Element {
    * with whatever came back.
   */
   _dataLoaderResponse (e) {
-    this.allSubmittableElements().forEach(b => { b.disabled = false })
 
-    // Assings each fields to the returned value, _and_ assigns info to the returned value too
-    this._setFieldsAsObject(this.request.lastResponse)
-    this._setInfo(this.request.lastResponse)
 
-    this.dispatchEvent(new CustomEvent('hot-form-loader-response', { detail: e.detail, bubbles: false, composed: true }))
+      this.allSubmittableElements().forEach(b => { b.disabled = false })
+
+      // Assings each fields to the returned value, _and_ assigns info to the returned value too
+      this._setInfo(this.request.lastResponse)
+      this._setFieldsAsObject(this.request.lastResponse)
+
+      this.dispatchEvent(new CustomEvent('hot-form-loader-response', { detail: e.detail, bubbles: false, composed: true }))
   }
 
   /**
